@@ -19,11 +19,15 @@ import {
 
   Search,
 
+ 
   Bell,
 
   Users,
 
+  UserRound,
+
   TrendingUp,
+
 
   GraduationCap,
 
@@ -75,6 +79,8 @@ import "./App.css";
 
 import LandingPage from "./LandingPage";
 import Login from "./pages/Login";
+import EmployeeManagement from "./pages/EmployeeManagement";
+import EmployeeProfile from "./pages/EmployeeProfile";
 
 const promotionData = [
 
@@ -110,19 +116,17 @@ const departments = [
 
 
 
+
 const navItems = [
-
   { label: "Overview", icon: LayoutDashboard },
-
+  { label: "Employee Management", icon: Users },
+  { label: "Employee Profile", icon: UserRound },
   { label: "Promotion Prediction", icon: Target },
-
   { label: "Attrition Prediction", icon: Activity },
-
   { label: "HR Analytics", icon: ChartNoAxesCombined },
-
   { label: "Datasets", icon: Database },
-
 ];
+
 
 
 
@@ -338,21 +342,18 @@ function Dashboard() {
 
 
 
-        <div className="page-area">
+       
+<div className="page-area">
+  {activePage === "Overview" && <Overview navigate={navigate} />}
+  {activePage === "Employee Management" && <EmployeeManagement />}
+  {activePage === "Employee Profile" && <EmployeeProfile />}
+  {activePage === "Promotion Prediction" && <PredictionPage type="promotion" />}
+  {activePage === "Attrition Prediction" && <PredictionPage type="attrition" />}
+  {activePage === "HR Analytics" && <Analytics />}
+  {activePage === "Datasets" && <Datasets />}
+  {activePage === "Settings" && <SettingsPage />}
+</div>
 
-          {activePage === "Overview" && <Overview navigate={navigate} />}
-
-          {activePage === "Promotion Prediction" && <PredictionPage type="promotion" />}
-
-          {activePage === "Attrition Prediction" && <PredictionPage type="attrition" />}
-
-          {activePage === "HR Analytics" && <Analytics />}
-
-          {activePage === "Datasets" && <Datasets />}
-
-          {activePage === "Settings" && <SettingsPage />}
-
-        </div>
 
 
 

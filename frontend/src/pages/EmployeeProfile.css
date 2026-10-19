@@ -1,0 +1,263 @@
+
+.ep-page {
+  min-height: 100vh;
+  padding: 32px;
+  background: #f4f7fb;
+  color: #172b45;
+  font-family: Inter, Arial, sans-serif;
+}
+
+.ep-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.ep-eyebrow {
+  color: #078c83;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.ep-header h1 {
+  margin: 8px 0;
+  font-size: 30px;
+}
+
+.ep-header p,
+.ep-identity p {
+  color: #718096;
+  margin: 0;
+}
+
+.ep-edit-btn {
+  background: #078c83;
+  color: white;
+  border: none;
+  border-radius: 9px;
+  padding: 12px 20px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ep-profile-card,
+.ep-content {
+  background: white;
+  border: 1px solid #e5ebf2;
+  border-radius: 16px;
+  padding: 26px;
+  box-shadow: 0 5px 18px #172b4508;
+}
+
+.ep-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.ep-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: #d8f5ef;
+  color: #078c83;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.ep-identity {
+  flex: 1;
+  min-width: 180px;
+}
+
+.ep-identity h2 {
+  margin: 0 0 8px;
+  font-size: 23px;
+}
+
+.ep-identity input {
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.ep-id {
+  display: inline-block;
+  margin-top: 10px;
+  background: #eef5fa;
+  color: #49617a;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.ep-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #13834e;
+  background: #e8f8ee;
+  border-radius: 20px;
+  padding: 8px 13px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ep-status span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #20a464;
+}
+
+.ep-tabs {
+  display: flex;
+  gap: 25px;
+  overflow-x: auto;
+  margin: 24px 0 0;
+  padding: 0 18px;
+  background: white;
+  border: 1px solid #e5ebf2;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+}
+
+.ep-tabs button {
+  white-space: nowrap;
+  padding: 17px 2px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #718096;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ep-tabs button.active {
+  color: #078c83;
+  border-bottom-color: #078c83;
+}
+
+.ep-content {
+  border-radius: 0 0 12px 12px;
+}
+
+.ep-content h3 {
+  margin: 0 0 24px;
+  font-size: 19px;
+}
+
+.ep-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.ep-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+
+.ep-field span,
+.ep-stat span {
+  color: #718096;
+  font-size: 13px;
+}
+
+.ep-field strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.ep-field input,
+.ep-identity input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #dce5ed;
+  border-radius: 8px;
+  background: #fbfdff;
+  color: #172b45;
+}
+
+.ep-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.ep-stat {
+  padding: 20px;
+  border: 1px solid #e5ebf2;
+  border-radius: 12px;
+}
+
+.ep-stat strong {
+  display: block;
+  margin: 14px 0;
+  font-size: 24px;
+}
+
+.ep-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #e8eef4;
+  margin-top: 12px;
+}
+
+.ep-bar span {
+  display: block;
+  height: 100%;
+  background: #0ba795;
+  border-radius: inherit;
+}
+
+.ep-note {
+  color: #718096;
+  font-size: 13px;
+  margin-top: 22px;
+}
+
+.ep-training {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid #e5ebf2;
+  border-radius: 12px;
+}
+
+.ep-training > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ep-training-icon {
+  background: #e0f5f1;
+  color: #078c83;
+  padding: 13px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+.ep-training p {
+  color: #718096;
+  margin-bottom: 0;
+}
+
+@media (max-width: 650px) {
+  .ep-page { padding: 18px; }
+  .ep-header { align-items: flex-start; flex-direction: column; }
+  .ep-grid, .ep-stats { grid-template-columns: 1fr; }
+  .ep-profile-card { padding: 18px; }
+}
