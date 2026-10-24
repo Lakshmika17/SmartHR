@@ -4,11 +4,14 @@
   "version": "1.0.0",
   "description": "SmartHR backend API",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "create-hr": "node scripts/createHrUser.js"
-  },
+ 
+"scripts": {
+  "start": "node server.js",
+  "dev": "nodemon server.js",
+  "create-hr": "node scripts/createHrUser.js",
+  "migrate-hr": "node scripts/migrateHrAdmin.js"
+},
+
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -24,4 +27,5 @@
   "devDependencies": {
     "nodemon": "^3.1.14"
   }
+  
 }

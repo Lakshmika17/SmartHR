@@ -10,6 +10,7 @@ import {
   Users,
   ArrowRight,
   ShieldCheck,
+  Building2,
 } from "lucide-react";
 import "./Login.css";
 
@@ -20,15 +21,19 @@ export default function Login() {
     email: "",
     password: "",
   });
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+
     setError("");
   };
 
@@ -36,7 +41,10 @@ export default function Login() {
     e.preventDefault();
     setError("");
 
-    if (!formData.email.trim() || !formData.password) {
+    const email = formData.email.trim().toLowerCase();
+    const password = formData.password;
+
+    if (!email || !password) {
       setError("Please enter your email and password.");
       return;
     }
@@ -44,22 +52,28 @@ export default function Login() {
     try {
       setLoading(true);
 
-      const response = await loginUser({
-        email: formData.email.trim(),
-        password: formData.password,
-      });
+      const response = await loginUser({ email, password });
 
-      // Expected response: { token, user }
-      if (!response?.token || response?.user?.role !== "HR") {
-        throw new Error("Invalid HR login response.");
+      const allowedRoles = ["HR_ADMIN", "HR_STAFF"];
+      const user = response?.user;
+
+      if (
+        !response?.token ||
+        !user ||
+        !allowedRoles.includes(user.role) ||
+        !user.company?.id
+      ) {
+        throw new Error(
+          "Your account information is incomplete. Please contact your administrator."
+        );
       }
 
+      // Save the authenticated session information.
       localStorage.setItem("smarthr_token", response.token);
-      localStorage.setItem(
-        "smarthr_user",
-        JSON.stringify(response.user)
-      );
+      localStorage.setItem("smarthr_user", JSON.stringify(user));
 
+      // Both roles currently use the existing dashboard route.
+      // Role-specific navigation will be implemented separately.
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(
@@ -95,17 +109,24 @@ export default function Login() {
 
           <p>
             Predict employee promotions, identify attrition risks,
-            and turn workforce data into actionable insights.
+            and turn workforce data into actionable insights
+            across your organization.
           </p>
 
           <div className="visual-features">
             <div>
               <ShieldCheck size={20} />
-              <span>Secure HR access</span>
+              <span>Secure, role-based access</span>
             </div>
+
             <div>
               <Users size={20} />
-              <span>AI-powered workforce insights</span>
+              <span>Multiple HR users per company</span>
+            </div>
+
+            <div>
+              <Building2 size={20} />
+              <span>Company-specific workforce insights</span>
             </div>
           </div>
         </div>
@@ -130,27 +151,29 @@ export default function Login() {
 
           <div className="login-heading">
             <span className="welcome-label">WELCOME BACK</span>
-            <h2>HR Portal Login</h2>
+            <h2>Welcome to SmartHR</h2>
             <p>
-              Sign in with your authorized HR account to continue.
+              Sign in using your authorized HR account.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
-              <label htmlFor="email">Email address</label>
+              <label htmlFor="email">Work email address</label>
 
               <div className="input-wrapper">
                 <Mail size={19} />
+
                 <input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="hr@company.com"
+                  placeholder="you@company.com"
                   value={formData.email}
                   onChange={handleChange}
                   autoComplete="username"
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -160,6 +183,7 @@ export default function Login() {
 
               <div className="input-wrapper">
                 <LockKeyhole size={19} />
+
                 <input
                   id="password"
                   name="password"
@@ -169,15 +193,17 @@ export default function Login() {
                   onChange={handleChange}
                   autoComplete="current-password"
                   required
+                  disabled={loading}
                 />
 
                 <button
                   type="button"
                   className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowPassword((previous) => !previous)}
                   aria-label={
                     showPassword ? "Hide password" : "Show password"
                   }
+                  disabled={loading}
                 >
                   {showPassword ? (
                     <EyeOff size={19} />
@@ -200,13 +226,14 @@ export default function Login() {
               disabled={loading}
             >
               {loading ? "Signing in..." : "Sign in to SmartHR"}
+
               {!loading && <ArrowRight size={19} />}
             </button>
           </form>
 
           <div className="login-security">
             <ShieldCheck size={17} />
-            <span>Authorized HR personnel only</span>
+            <span>Secure access for authorized HR personnel</span>
           </div>
 
           <p className="login-bottom">
