@@ -81,6 +81,7 @@ import LandingPage from "./LandingPage";
 import Login from "./pages/Login";
 import EmployeeManagement from "./pages/EmployeeManagement";
 import EmployeeProfile from "./pages/EmployeeProfile";
+import RegisterCompany from "./pages/RegisterCompany";
 
 const promotionData = [
 
@@ -1373,6 +1374,10 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+  path="/register-company"
+  element={<RegisterCompany />}
+/>
       </Routes>
     </BrowserRouter>
   );

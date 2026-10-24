@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -10,6 +11,9 @@ import {
   ShieldCheck,
   Sun,
   Target,
+  Building2,
+  Users,
+  ArrowRight,
 } from "lucide-react";
 
 import HeroSection from "./components/HeroSection";
@@ -51,8 +55,8 @@ const workflow = [
 
 const techStack = [
   [Database, "React + Vite", "Frontend"],
-  [ShieldCheck, "FastAPI", "Backend APIs"],
-  [BrainCircuit, "Scikit-learn", "Machine learning"],
+  [ShieldCheck, "Node.js + Express", "Authentication and HR APIs"],
+  [BrainCircuit, "Python + Scikit-learn", "Machine learning"],
   [ChartNoAxesCombined, "SHAP", "Model explainability"],
 ];
 
@@ -61,8 +65,9 @@ function getInitialTheme() {
     const saved = localStorage.getItem("smarthr-theme");
     if (saved === "light" || saved === "dark") return saved;
   } catch {
-    /* storage unavailable, fall through */
+    // Ignore unavailable storage.
   }
+
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
@@ -75,7 +80,7 @@ export default function LandingPage() {
     try {
       localStorage.setItem("smarthr-theme", theme);
     } catch {
-      /* ignore */
+      // Ignore unavailable storage.
     }
   }, [theme]);
 
@@ -121,6 +126,66 @@ export default function LandingPage() {
         <HeroSection />
       </div>
 
+      {/* Role-based entry options */}
+      <section className="landing-portals" id="portals">
+        <div className="landing-container">
+          <div className="landing-section-heading">
+            <h2>Access your HR workspace</h2>
+            <p>
+              Choose the portal that matches your role, or register your
+              organization to get started with SmartHR.
+            </p>
+          </div>
+
+          <div className="landing-portal-grid">
+            <article className="landing-portal-card">
+              <div className="landing-portal-icon">
+                <ShieldCheck size={25} />
+              </div>
+              <h3>HR Admin</h3>
+              <p>
+                Manage your company workspace, invite HR Staff, and review
+                authorized workforce insights.
+              </p>
+              <Link to="/login" className="landing-portal-link">
+                Admin login <ArrowRight size={17} />
+              </Link>
+            </article>
+
+            <article className="landing-portal-card">
+              <div className="landing-portal-icon">
+                <Users size={25} />
+              </div>
+              <h3>HR Staff</h3>
+              <p>
+                Access authorized employee records, prediction tools,
+                analytics, and assigned HR tasks.
+              </p>
+              <Link to="/login" className="landing-portal-link">
+                Staff login <ArrowRight size={17} />
+              </Link>
+            </article>
+
+            <article className="landing-portal-card landing-portal-featured">
+              <div className="landing-portal-icon">
+                <Building2 size={25} />
+              </div>
+              <h3>Register your company</h3>
+              <p>
+                New to SmartHR? Register your organization and create its
+                first HR Admin account.
+              </p>
+              <Link
+                to="/register-company"
+                className="landing-portal-link"
+              >
+                Get started <ArrowRight size={17} />
+              </Link>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <section className="landing-features" id="features">
         <div className="landing-container">
           <div className="landing-section-heading">
@@ -156,7 +221,7 @@ export default function LandingPage() {
 
             <Link className="landing-login-button" to="/login">
               <LogIn size={16} />
-              Log in to HR workspace
+              Open HR workspace
             </Link>
           </div>
 
@@ -178,7 +243,10 @@ export default function LandingPage() {
         <div className="landing-container">
           <div className="landing-section-heading">
             <h2>Built with</h2>
-            <p>A modular frontend and backend architecture for HR analytics.</p>
+            <p>
+              A modular architecture for authentication, workforce
+              analytics and machine learning.
+            </p>
           </div>
 
           <div className="landing-tech-grid">
