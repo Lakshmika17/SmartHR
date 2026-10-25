@@ -20,6 +20,7 @@ const allowedIndustries = [
   "Other",
 ];
 
+
 router.post("/register-company", async (req, res) => {
   const companyName = String(req.body.companyName || "").trim();
   const industry = String(req.body.industry || "").trim();
@@ -66,56 +67,36 @@ router.post("/register-company", async (req, res) => {
     });
   }
 
-  const session = await mongoose.startSession();
+  let createdCompany;
 
   try {
-    let createdCompany;
-    let createdAdmin;
+    const existingUser = await User.findOne({ email });
 
-    await session.withTransaction(async () => {
-      const existingUser = await User.findOne({ email })
-        .session(session);
+    if (existingUser) {
+      return res.status(409).json({
+        message: "An account with this email already exists.",
+      });
+    }
 
-      if (existingUser) {
-        const error = new Error("An account with this email already exists.");
-        error.status = 409;
-        throw error;
-      }
+    const companyCode =
+      "SH-" + crypto.randomBytes(6).toString("hex").toUpperCase();
 
-      const companyCode =
-        "SH-" + crypto.randomBytes(6).toString("hex").toUpperCase();
+    const passwordHash = await bcrypt.hash(password, 12);
 
-      const passwordHash = await bcrypt.hash(password, 12);
+    createdCompany = await Company.create({
+      name: companyName,
+      industry,
+      companyCode,
+      isActive: true,
+    });
 
-      const companies = await Company.create(
-        [
-          {
-            name: companyName,
-            industry,
-            companyCode,
-            isActive: true,
-          },
-        ],
-        { session }
-      );
-
-      createdCompany = companies[0];
-
-      const users = await User.create(
-        [
-          {
-            name: adminName,
-            email,
-            password: passwordHash,
-            role: "HR_ADMIN",
-            company: createdCompany._id,
-            isActive: true,
-          },
-        ],
-        { session }
-      );
-
-      createdAdmin = users[0];
+    const createdAdmin = await User.create({
+      name: adminName,
+      email,
+      password: passwordHash,
+      role: "HR_ADMIN",
+      company: createdCompany._id,
+      isActive: true,
     });
 
     return res.status(201).json({
@@ -133,24 +114,28 @@ router.post("/register-company", async (req, res) => {
       },
     });
   } catch (error) {
-    if (error.status === 409 || error.code === 11000) {
+    // If admin creation fails, remove the company created by this request.
+    if (createdCompany) {
+      try {
+        await Company.deleteOne({ _id: createdCompany._id });
+      } catch (cleanupError) {
+        console.error("Company cleanup failed:", cleanupError.message);
+      }
+    }
+
+    if (error.code === 11000) {
       return res.status(409).json({
-        message:
-          error.status === 409
-            ? error.message
-            : "This email or company code is already registered. Please try again.",
+        message: "This email or company code is already registered.",
       });
     }
 
     console.error("Company registration failed:", error.message);
 
     return res.status(500).json({
-      message:
-        "Unable to register the company. Please try again.",
+      message: "Unable to register the company. Please try again.",
     });
-  } finally {
-    await session.endSession();
   }
 });
+
 
 module.exports = router;

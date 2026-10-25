@@ -38,6 +38,7 @@ export default function RegisterCompany() {
     setSuccess("");
   };
 
+  
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
@@ -63,9 +64,50 @@ export default function RegisterCompany() {
       return;
     }
 
-    // API integration will be added after the backend is ready.
-    setError("Registration API is not connected yet.");
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/auth/register-company",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            companyName: form.companyName.trim(),
+            industry: form.industry,
+            adminName: form.adminName.trim(),
+            email: form.email.trim().toLowerCase(),
+            password: form.password,
+            confirmPassword: form.confirmPassword,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Company registration failed."
+        );
+      }
+
+      setSuccess(
+        "Company registered successfully! You can now sign in."
+      );
+
+      setForm(initialForm);
+    } catch (error) {
+      setError(
+        error.message ||
+          "Cannot connect to the backend. Check that the server is running."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <main className="register-page">

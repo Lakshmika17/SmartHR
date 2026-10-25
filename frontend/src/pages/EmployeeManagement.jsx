@@ -1,5 +1,11 @@
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  getEmployees,
+  createEmployee,
+  updateEmployee,
+  updateEmployeeStatus,
+} from "../services/employeeService";
 import {
   Search,
   Plus,
@@ -14,64 +20,6 @@ import {
 } from "lucide-react";
 import "./EmployeeManagement.css";
 
-const initialEmployees = [
-  {
-    id: 1001,
-    name: "Aarav Sharma",
-    email: "aarav.sharma@example.com",
-    department: "Technology",
-    role: "Software Engineer",
-    experience: 4,
-    rating: 4,
-    training: 82,
-    status: "Active",
-  },
-  {
-    id: 1002,
-    name: "Ananya Patel",
-    email: "ananya.patel@example.com",
-    department: "HR",
-    role: "HR Executive",
-    experience: 3,
-    rating: 5,
-    training: 91,
-    status: "Active",
-  },
-  {
-    id: 1003,
-    name: "Rohan Mehta",
-    email: "rohan.mehta@example.com",
-    department: "Finance",
-    role: "Financial Analyst",
-    experience: 6,
-    rating: 3,
-    training: 74,
-    status: "Active",
-  },
-  {
-    id: 1004,
-    name: "Priya Nair",
-    email: "priya.nair@example.com",
-    department: "Sales",
-    role: "Sales Executive",
-    experience: 2,
-    rating: 4,
-    training: 88,
-    status: "Inactive",
-  },
-  {
-    id: 1005,
-    name: "Ishaan Verma",
-    email: "ishaan.verma@example.com",
-    department: "Technology",
-    role: "Data Analyst",
-    experience: 5,
-    rating: 4,
-    training: 85,
-    status: "Active",
-  },
-];
-
 const emptyForm = {
   name: "",
   email: "",
@@ -82,8 +30,35 @@ const emptyForm = {
   training: "70",
 };
 
+const departments = [
+  "Technology",
+  "HR",
+  "Finance",
+  "Sales",
+  "Operations",
+  "Research & Development",
+];
+
+function normalizeEmployee(employee) {
+  return {
+    ...employee,
+    id: String(employee._id || employee.id),
+    name: employee.name || "",
+    email: employee.email || "",
+    department: employee.department || "Technology",
+    role: employee.role || "",
+    experience: Number(employee.experience ?? 0),
+    rating: Number(employee.rating ?? 3),
+    training: Number(employee.training ?? 70),
+    status: employee.status || "Active",
+  };
+}
+
 function EmployeeManagement() {
-  const [employees, setEmployees] = useState(initialEmployees);
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [apiError, setApiError] = useState("");
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("All");
   const [status, setStatus] = useState("All");
@@ -92,14 +67,73 @@ function EmployeeManagement() {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
 
-  const departments = [
-    "Technology",
-    "HR",
-    "Finance",
-    "Sales",
-    "Operations",
-    "Research & Development",
-  ];
+  async function loadEmployees() {
+    try {
+      setLoading(true);
+      setApiError("");
+
+      const response = await getEmployees();
+      const records = Array.isArray(response)
+        ? response
+        : response.employees;
+
+      if (!Array.isArray(records)) {
+        throw new Error("The server returned an unexpected employee list.");
+      }
+
+      setEmployees(records.map(normalizeEmployee));
+    } catch (err) {
+      setApiError(
+        err.response?.data?.message ||
+          err.message ||
+          "Unable to load employees. Please sign in again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+  let ignore = false;
+
+  async function fetchEmployees() {
+    try {
+      setLoading(true);
+      setApiError("");
+
+      const response = await getEmployees();
+      const records = Array.isArray(response)
+        ? response
+        : response.employees;
+
+      if (!Array.isArray(records)) {
+        throw new Error("Invalid employee data received.");
+      }
+
+      if (!ignore) {
+        setEmployees(records.map(normalizeEmployee));
+      }
+    } catch (err) {
+      if (!ignore) {
+        setApiError(
+          err.response?.data?.message ||
+            err.message ||
+            "Unable to load employees."
+        );
+      }
+    } finally {
+      if (!ignore) {
+        setLoading(false);
+      }
+    }
+  }
+
+  fetchEmployees();
+
+  return () => {
+    ignore = true;
+  };
+}, []);
 
   const filteredEmployees = useMemo(() => {
     const query = search.toLowerCase().trim();
@@ -109,7 +143,7 @@ function EmployeeManagement() {
         employee.name.toLowerCase().includes(query) ||
         employee.email.toLowerCase().includes(query) ||
         employee.role.toLowerCase().includes(query) ||
-        String(employee.id).includes(query);
+        employee.id.toLowerCase().includes(query);
 
       const matchesDepartment =
         department === "All" || employee.department === department;
@@ -125,10 +159,15 @@ function EmployeeManagement() {
     (employee) => employee.status === "Active"
   ).length;
 
+  const departmentCount = new Set(
+    employees.map((employee) => employee.department)
+  ).size;
+
   function openAdd() {
     setSelected(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm });
     setError("");
+    setApiError("");
     setModal("add");
   }
 
@@ -144,25 +183,69 @@ function EmployeeManagement() {
       training: String(employee.training),
     });
     setError("");
+    setApiError("");
     setModal("edit");
   }
 
-  function saveEmployee(event) {
-    event.preventDefault();
+  function updateForm(event) {
+    const { name, value } = event.target;
 
-    if (!form.name.trim() || !form.email.trim() || !form.role.trim()) {
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+
+    setError("");
+  }
+
+  async function saveEmployee(event) {
+    event.preventDefault();
+    setError("");
+    setApiError("");
+
+    const name = form.name.trim();
+    const email = form.email.trim().toLowerCase();
+    const role = form.role.trim();
+    const experience = Number(form.experience);
+    const rating = Number(form.rating);
+    const training = Number(form.training);
+
+    if (!name || !email || !role) {
       setError("Please complete all required fields.");
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Enter a valid email address.");
+      return;
+    }
+
+    if (
+      !Number.isFinite(experience) ||
+      experience < 0 ||
+      experience > 50
+    ) {
+      setError("Experience must be between 0 and 50 years.");
+      return;
+    }
+
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      setError("Rating must be between 1 and 5.");
+      return;
+    }
+
+    if (
+      !Number.isFinite(training) ||
+      training < 0 ||
+      training > 100
+    ) {
+      setError("Training score must be between 0 and 100.");
       return;
     }
 
     const duplicate = employees.some(
       (employee) =>
-        employee.email.toLowerCase() === form.email.toLowerCase() &&
+        employee.email.toLowerCase() === email &&
         employee.id !== selected?.id
     );
 
@@ -172,38 +255,58 @@ function EmployeeManagement() {
     }
 
     const employeeData = {
-      ...form,
-      name: form.name.trim(),
-      email: form.email.trim(),
-      role: form.role.trim(),
-      experience: Number(form.experience),
-      rating: Number(form.rating),
-      training: Number(form.training),
+      name,
+      email,
+      department: form.department,
+      role,
+      experience,
+      rating,
+      training,
     };
 
-    if (modal === "edit") {
-      setEmployees((current) =>
-        current.map((employee) =>
-          employee.id === selected.id
-            ? { ...employee, ...employeeData }
-            : employee
-        )
+    try {
+      setSaving(true);
+
+      if (modal === "edit") {
+        const response = await updateEmployee(
+          selected.id,
+          employeeData
+        );
+
+        const updated = response.employee || response;
+
+        setEmployees((current) =>
+          current.map((employee) =>
+            employee.id === selected.id
+              ? normalizeEmployee(updated)
+              : employee
+          )
+        );
+      } else {
+        const response = await createEmployee(employeeData);
+        const created = response.employee || response;
+
+        setEmployees((current) => [
+          normalizeEmployee(created),
+          ...current,
+        ]);
+      }
+
+      setModal(null);
+      setSelected(null);
+      setForm({ ...emptyForm });
+      setError("");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Unable to save the employee. Please try again."
       );
-    } else {
-      const newEmployee = {
-        id: Date.now(),
-        ...employeeData,
-        status: "Active",
-      };
-
-      setEmployees((current) => [newEmployee, ...current]);
+    } finally {
+      setSaving(false);
     }
-
-    setModal(null);
-    setError("");
   }
 
-  function toggleStatus(employee) {
+  async function toggleStatus(employee) {
     const nextStatus =
       employee.status === "Active" ? "Inactive" : "Active";
 
@@ -213,20 +316,33 @@ function EmployeeManagement() {
 
     if (!confirmed) return;
 
-    setEmployees((current) =>
-      current.map((item) =>
-        item.id === employee.id
-          ? { ...item, status: nextStatus }
-          : item
-      )
-    );
-  }
+    setApiError("");
 
-  function updateForm(event) {
-    setForm((current) => ({
-      ...current,
-      [event.target.name]: event.target.value,
-    }));
+    try {
+      const response = await updateEmployeeStatus(
+        employee.id,
+        nextStatus
+      );
+
+      const updated = response.employee || response;
+
+      setEmployees((current) =>
+        current.map((item) =>
+          item.id === employee.id
+            ? normalizeEmployee(updated)
+            : item
+        )
+      );
+
+      if (selected?.id === employee.id) {
+        setSelected(normalizeEmployee(updated));
+      }
+    } catch (err) {
+      setApiError(
+        err.response?.data?.message ||
+          "Unable to update employee status."
+      );
+    }
   }
 
   return (
@@ -235,14 +351,33 @@ function EmployeeManagement() {
         <div>
           <span className="employee-eyebrow">PEOPLE OPERATIONS</span>
           <h1>Employee Management</h1>
-          <p>Manage employee records, roles and workforce information.</p>
+          <p>
+            Manage employee records, roles and workforce information.
+          </p>
         </div>
 
-        <button className="employee-primary-btn" onClick={openAdd}>
+        <button
+          className="employee-primary-btn"
+          onClick={openAdd}
+          disabled={loading || saving}
+        >
           <Plus size={18} />
           Add Employee
         </button>
       </div>
+
+      {apiError && (
+        <div className="employee-form-error" role="alert">
+          {apiError}
+          <button
+            type="button"
+            onClick={loadEmployees}
+            disabled={loading}
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       <div className="employee-stats">
         <div className="employee-stat-card">
@@ -271,9 +406,7 @@ function EmployeeManagement() {
           </span>
           <div>
             <p>Departments</p>
-            <h2>
-              {new Set(employees.map((employee) => employee.department)).size}
-            </h2>
+            <h2>{departmentCount}</h2>
           </div>
         </div>
       </div>
@@ -351,92 +484,106 @@ function EmployeeManagement() {
             </thead>
 
             <tbody>
-              {filteredEmployees.map((employee) => (
-                <tr key={employee.id}>
-                  <td>
-                    <div className="employee-identity">
-                      <span className="employee-avatar">
-                        {employee.name
-                          .split(" ")
-                          .map((part) => part[0])
-                          .slice(0, 2)
-                          .join("")
-                          .toUpperCase()}
-                      </span>
-                      <div>
-                        <strong>{employee.name}</strong>
-                        <span>{employee.email}</span>
-                        <small>ID: {employee.id}</small>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td>
-                    <strong className="employee-department">
-                      {employee.department}
-                    </strong>
-                    <span className="employee-role">{employee.role}</span>
-                  </td>
-
-                  <td>{employee.experience} years</td>
-
-                  <td>
-                    <span className="employee-rating">
-                      ★ {employee.rating}/5
-                    </span>
-                  </td>
-
-                  <td>
-                    <span
-                      className={`employee-status ${employee.status.toLowerCase()}`}
-                    >
-                      {employee.status}
-                    </span>
-                  </td>
-
-                  <td>
-                    <div className="employee-actions">
-                      <button
-                        title="View employee"
-                        aria-label={`View ${employee.name}`}
-                        onClick={() => {
-                          setSelected(employee);
-                          setModal("view");
-                        }}
-                      >
-                        <Eye size={17} />
-                      </button>
-
-                      <button
-                        title="Edit employee"
-                        aria-label={`Edit ${employee.name}`}
-                        onClick={() => openEdit(employee)}
-                      >
-                        <Pencil size={17} />
-                      </button>
-
-                      <button
-                        title={
-                          employee.status === "Active"
-                            ? "Deactivate employee"
-                            : "Reactivate employee"
-                        }
-                        aria-label={`Change status for ${employee.name}`}
-                        onClick={() => toggleStatus(employee)}
-                      >
-                        <UserX size={17} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-
-              {filteredEmployees.length === 0 && (
+              {loading ? (
                 <tr>
                   <td colSpan="6" className="employee-empty">
-                    No employees match your search or filters.
+                    Loading employees...
                   </td>
                 </tr>
+              ) : filteredEmployees.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="employee-empty">
+                    {employees.length === 0
+                      ? "No employees have been added yet. Select Add Employee to create the first record."
+                      : "No employees match your search or filters."}
+                  </td>
+                </tr>
+              ) : (
+                filteredEmployees.map((employee) => (
+                  <tr key={employee.id}>
+                    <td>
+                      <div className="employee-identity">
+                        <span className="employee-avatar">
+                          {employee.name
+                            .split(" ")
+                            .filter(Boolean)
+                            .map((part) => part[0])
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase()}
+                        </span>
+                        <div>
+                          <strong>{employee.name}</strong>
+                          <span>{employee.email}</span>
+                          <small>ID: {employee.id}</small>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      <strong className="employee-department">
+                        {employee.department}
+                      </strong>
+                      <span className="employee-role">
+                        {employee.role}
+                      </span>
+                    </td>
+
+                    <td>{employee.experience} years</td>
+
+                    <td>
+                      <span className="employee-rating">
+                        ★ {employee.rating}/5
+                      </span>
+                    </td>
+
+                    <td>
+                      <span
+                        className={`employee-status ${employee.status.toLowerCase()}`}
+                      >
+                        {employee.status}
+                      </span>
+                    </td>
+
+                    <td>
+                      <div className="employee-actions">
+                        <button
+                          type="button"
+                          title="View employee"
+                          aria-label={`View ${employee.name}`}
+                          onClick={() => {
+                            setSelected(employee);
+                            setModal("view");
+                          }}
+                        >
+                          <Eye size={17} />
+                        </button>
+
+                        <button
+                          type="button"
+                          title="Edit employee"
+                          aria-label={`Edit ${employee.name}`}
+                          onClick={() => openEdit(employee)}
+                        >
+                          <Pencil size={17} />
+                        </button>
+
+                        <button
+                          type="button"
+                          title={
+                            employee.status === "Active"
+                              ? "Deactivate employee"
+                              : "Reactivate employee"
+                          }
+                          aria-label={`Change status for ${employee.name}`}
+                          onClick={() => toggleStatus(employee)}
+                        >
+                          <UserX size={17} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -452,7 +599,12 @@ function EmployeeManagement() {
         <div
           className="employee-modal-backdrop"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setModal(null);
+            if (
+              event.target === event.currentTarget &&
+              !saving
+            ) {
+              setModal(null);
+            }
           }}
         >
           <section
@@ -469,9 +621,11 @@ function EmployeeManagement() {
                 </h2>
               </div>
               <button
+                type="button"
                 className="employee-modal-close"
                 onClick={() => setModal(null)}
                 aria-label="Close form"
+                disabled={saving}
               >
                 <X size={21} />
               </button>
@@ -486,7 +640,9 @@ function EmployeeManagement() {
                     value={form.name}
                     onChange={updateForm}
                     placeholder="Enter full name"
+                    maxLength={100}
                     required
+                    disabled={saving}
                   />
                 </label>
 
@@ -499,6 +655,7 @@ function EmployeeManagement() {
                     onChange={updateForm}
                     placeholder="name@company.com"
                     required
+                    disabled={saving}
                   />
                 </label>
 
@@ -508,6 +665,7 @@ function EmployeeManagement() {
                     name="department"
                     value={form.department}
                     onChange={updateForm}
+                    disabled={saving}
                   >
                     {departments.map((item) => (
                       <option key={item} value={item}>
@@ -525,6 +683,7 @@ function EmployeeManagement() {
                     onChange={updateForm}
                     placeholder="Enter job role"
                     required
+                    disabled={saving}
                   />
                 </label>
 
@@ -538,6 +697,7 @@ function EmployeeManagement() {
                     value={form.experience}
                     onChange={updateForm}
                     required
+                    disabled={saving}
                   />
                 </label>
 
@@ -547,6 +707,7 @@ function EmployeeManagement() {
                     name="rating"
                     value={form.rating}
                     onChange={updateForm}
+                    disabled={saving}
                   >
                     {[1, 2, 3, 4, 5].map((value) => (
                       <option key={value} value={value}>
@@ -566,22 +727,36 @@ function EmployeeManagement() {
                     value={form.training}
                     onChange={updateForm}
                     required
+                    disabled={saving}
                   />
                 </label>
               </div>
 
-              {error && <p className="employee-form-error">{error}</p>}
+              {error && (
+                <p className="employee-form-error" role="alert">
+                  {error}
+                </p>
+              )}
 
               <div className="employee-modal-actions">
                 <button
                   type="button"
                   className="employee-secondary-btn"
                   onClick={() => setModal(null)}
+                  disabled={saving}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="employee-primary-btn">
-                  {modal === "add" ? "Save Employee" : "Save Changes"}
+                <button
+                  type="submit"
+                  className="employee-primary-btn"
+                  disabled={saving}
+                >
+                  {saving
+                    ? "Saving..."
+                    : modal === "add"
+                      ? "Save Employee"
+                      : "Save Changes"}
                 </button>
               </div>
             </form>
@@ -593,7 +768,9 @@ function EmployeeManagement() {
         <div
           className="employee-modal-backdrop"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setModal(null);
+            if (event.target === event.currentTarget) {
+              setModal(null);
+            }
           }}
         >
           <section
@@ -604,11 +781,14 @@ function EmployeeManagement() {
           >
             <div className="employee-modal-header">
               <div>
-                <span className="employee-eyebrow">EMPLOYEE PROFILE</span>
+                <span className="employee-eyebrow">
+                  EMPLOYEE PROFILE
+                </span>
                 <h2 id="employee-view-title">{selected.name}</h2>
                 <p>{selected.email}</p>
               </div>
               <button
+                type="button"
                 className="employee-modal-close"
                 onClick={() => setModal(null)}
                 aria-label="Close profile"
@@ -618,23 +798,46 @@ function EmployeeManagement() {
             </div>
 
             <div className="employee-profile-details">
-              <div><span>Employee ID</span><strong>{selected.id}</strong></div>
-              <div><span>Department</span><strong>{selected.department}</strong></div>
-              <div><span>Job Role</span><strong>{selected.role}</strong></div>
-              <div><span>Experience</span><strong>{selected.experience} years</strong></div>
-              <div><span>Previous Rating</span><strong>{selected.rating}/5</strong></div>
-              <div><span>Training Score</span><strong>{selected.training}/100</strong></div>
-              <div><span>Employment Status</span><strong>{selected.status}</strong></div>
+              <div>
+                <span>Employee ID</span>
+                <strong>{selected.id}</strong>
+              </div>
+              <div>
+                <span>Department</span>
+                <strong>{selected.department}</strong>
+              </div>
+              <div>
+                <span>Job Role</span>
+                <strong>{selected.role}</strong>
+              </div>
+              <div>
+                <span>Experience</span>
+                <strong>{selected.experience} years</strong>
+              </div>
+              <div>
+                <span>Previous Rating</span>
+                <strong>{selected.rating}/5</strong>
+              </div>
+              <div>
+                <span>Training Score</span>
+                <strong>{selected.training}/100</strong>
+              </div>
+              <div>
+                <span>Employment Status</span>
+                <strong>{selected.status}</strong>
+              </div>
             </div>
 
             <div className="employee-modal-actions">
               <button
+                type="button"
                 className="employee-secondary-btn"
                 onClick={() => setModal(null)}
               >
                 Close
               </button>
               <button
+                type="button"
                 className="employee-primary-btn"
                 onClick={() => openEdit(selected)}
               >
