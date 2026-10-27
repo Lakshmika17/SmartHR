@@ -48,6 +48,8 @@ import Login from "./pages/Login";
 import EmployeeManagement from "./pages/EmployeeManagement";
 import EmployeeProfile from "./pages/EmployeeProfile";
 import RegisterCompany from "./pages/RegisterCompany";
+import HRAnalytics from "./pages/HRAnalytics";
+import PromotionPrediction from "./pages/PromotionPrediction";
 
 const promotionData = [
   { name: "Not promoted", value: 50140 },
@@ -478,10 +480,324 @@ function Overview({ navigate }) {
   );
 }
 
+
 function PredictionPage({ type }) {
   const isPromotion = type === "promotion";
 
-  const [form, setForm] = useState({
+  const promotionFields = [
+    {
+      name: "department",
+      label: "Department",
+      options: [
+        "Technology",
+        "Analytics",
+        "Sales & Marketing",
+        "Operations",
+        "Procurement",
+        "Finance",
+        "HR",
+        "Legal",
+        "R&D",
+      ],
+    },
+    {
+      name: "region",
+      label: "Region",
+      type: "text",
+    },
+    {
+      name: "education",
+      label: "Education",
+      options: [
+        "Below Secondary",
+        "Bachelor's",
+        "Master's & above",
+      ],
+    },
+    {
+      name: "gender",
+      label: "Gender",
+      options: [
+        { label: "Male", value: "m" },
+        { label: "Female", value: "f" },
+      ],
+    },
+    {
+      name: "recruitment_channel",
+      label: "Recruitment channel",
+      options: ["sourcing", "referred", "other"],
+    },
+    {
+      name: "age",
+      label: "Age",
+      type: "number",
+      min: 18,
+      max: 100,
+    },
+    {
+      name: "no_of_trainings",
+      label: "Number of trainings",
+      type: "number",
+      min: 0,
+      max: 100,
+    },
+    {
+      name: "previous_year_rating",
+      label: "Previous year rating",
+      type: "number",
+      min: 1,
+      max: 5,
+    },
+    {
+      name: "length_of_service",
+      label: "Years of service",
+      type: "number",
+      min: 0,
+      max: 60,
+    },
+    {
+      name: "awards_won",
+      label: "Awards won",
+      options: [
+        { label: "No", value: 0 },
+        { label: "Yes", value: 1 },
+      ],
+    },
+    {
+      name: "avg_training_score",
+      label: "Average training score",
+      type: "number",
+      min: 0,
+      max: 100,
+    },
+  ];
+
+  const attritionFields = [
+    { name: "Age", label: "Age", type: "number", min: 18, max: 100 },
+    {
+      name: "BusinessTravel",
+      label: "Business travel",
+      options: ["Travel_Rarely", "Travel_Frequently", "Non-Travel"],
+    },
+    { name: "DailyRate", label: "Daily rate", type: "number", min: 0 },
+    {
+      name: "Department",
+      label: "Department",
+      options: [
+        "Research & Development",
+        "Sales",
+        "Human Resources",
+      ],
+    },
+    {
+      name: "DistanceFromHome",
+      label: "Distance from home",
+      type: "number",
+      min: 0,
+    },
+    {
+      name: "Education",
+      label: "Education level",
+      options: [
+        { label: "1 - Below College", value: 1 },
+        { label: "2 - College", value: 2 },
+        { label: "3 - Bachelor", value: 3 },
+        { label: "4 - Master", value: 4 },
+        { label: "5 - Doctor", value: 5 },
+      ],
+    },
+    {
+      name: "EducationField",
+      label: "Education field",
+      options: [
+        "Life Sciences",
+        "Medical",
+        "Marketing",
+        "Technical Degree",
+        "Other",
+        "Human Resources",
+      ],
+    },
+    {
+      name: "EnvironmentSatisfaction",
+      label: "Environment satisfaction",
+      options: [
+        { label: "1 - Low", value: 1 },
+        { label: "2 - Medium", value: 2 },
+        { label: "3 - High", value: 3 },
+        { label: "4 - Very High", value: 4 },
+      ],
+    },
+    {
+      name: "Gender",
+      label: "Gender",
+      options: ["Male", "Female"],
+    },
+    {
+      name: "HourlyRate",
+      label: "Hourly rate",
+      type: "number",
+      min: 0,
+      max: 100,
+    },
+    {
+      name: "JobInvolvement",
+      label: "Job involvement",
+      options: [
+        { label: "1 - Low", value: 1 },
+        { label: "2 - Medium", value: 2 },
+        { label: "3 - High", value: 3 },
+        { label: "4 - Very High", value: 4 },
+      ],
+    },
+    {
+      name: "JobLevel",
+      label: "Job level",
+      options: [
+        { label: "Level 1", value: 1 },
+        { label: "Level 2", value: 2 },
+        { label: "Level 3", value: 3 },
+        { label: "Level 4", value: 4 },
+        { label: "Level 5", value: 5 },
+      ],
+    },
+    {
+      name: "JobRole",
+      label: "Job role",
+      options: [
+        "Healthcare Representative",
+        "Human Resources",
+        "Laboratory Technician",
+        "Manager",
+        "Manufacturing Director",
+        "Research Director",
+        "Research Scientist",
+        "Sales Executive",
+        "Sales Representative",
+      ],
+    },
+    {
+      name: "JobSatisfaction",
+      label: "Job satisfaction",
+      options: [
+        { label: "1 - Low", value: 1 },
+        { label: "2 - Medium", value: 2 },
+        { label: "3 - High", value: 3 },
+        { label: "4 - Very High", value: 4 },
+      ],
+    },
+    {
+      name: "MaritalStatus",
+      label: "Marital status",
+      options: ["Single", "Married", "Divorced"],
+    },
+    {
+      name: "MonthlyIncome",
+      label: "Monthly income",
+      type: "number",
+      min: 0,
+    },
+    {
+      name: "MonthlyRate",
+      label: "Monthly rate",
+      type: "number",
+      min: 0,
+    },
+    {
+      name: "NumCompaniesWorked",
+      label: "Previous companies worked",
+      type: "number",
+      min: 0,
+    },
+    {
+      name: "OverTime",
+      label: "Works overtime",
+      options: ["Yes", "No"],
+    },
+    {
+      name: "PercentSalaryHike",
+      label: "Salary hike (%)",
+      type: "number",
+      min: 0,
+      max: 100,
+    },
+    {
+      name: "PerformanceRating",
+      label: "Performance rating",
+      options: [
+        { label: "3 - Excellent", value: 3 },
+        { label: "4 - Outstanding", value: 4 },
+      ],
+    },
+    {
+      name: "RelationshipSatisfaction",
+      label: "Relationship satisfaction",
+      options: [
+        { label: "1 - Low", value: 1 },
+        { label: "2 - Medium", value: 2 },
+        { label: "3 - High", value: 3 },
+        { label: "4 - Very High", value: 4 },
+      ],
+    },
+    {
+      name: "StockOptionLevel",
+      label: "Stock option level",
+      options: [
+        { label: "0", value: 0 },
+        { label: "1", value: 1 },
+        { label: "2", value: 2 },
+        { label: "3", value: 3 },
+      ],
+    },
+    {
+      name: "TotalWorkingYears",
+      label: "Total working years",
+      type: "number",
+      min: 0,
+    },
+    {
+      name: "TrainingTimesLastYear",
+      label: "Training sessions last year",
+      type: "number",
+      min: 0,
+    },
+    {
+      name: "WorkLifeBalance",
+      label: "Work-life balance",
+      options: [
+        { label: "1 - Bad", value: 1 },
+        { label: "2 - Good", value: 2 },
+        { label: "3 - Better", value: 3 },
+        { label: "4 - Best", value: 4 },
+      ],
+    },
+    {
+      name: "YearsAtCompany",
+      label: "Years at company",
+      type: "number",
+      min: 0,
+    },
+    {
+      name: "YearsInCurrentRole",
+      label: "Years in current role",
+      type: "number",
+      min: 0,
+    },
+    {
+      name: "YearsSinceLastPromotion",
+      label: "Years since last promotion",
+      type: "number",
+      min: 0,
+    },
+    {
+      name: "YearsWithCurrManager",
+      label: "Years with current manager",
+      type: "number",
+      min: 0,
+    },
+  ];
+
+  const promotionDefaults = {
     department: "Technology",
     region: "region_7",
     education: "Bachelor's",
@@ -493,29 +809,62 @@ function PredictionPage({ type }) {
     length_of_service: 4,
     awards_won: 0,
     avg_training_score: 82,
-  });
+  };
 
+  const attritionDefaults = {
+    Age: 29,
+    BusinessTravel: "Travel_Rarely",
+    DailyRate: 1100,
+    Department: "Research & Development",
+    DistanceFromHome: 5,
+    Education: 3,
+    EducationField: "Life Sciences",
+    EnvironmentSatisfaction: 3,
+    Gender: "Male",
+    HourlyRate: 65,
+    JobInvolvement: 3,
+    JobLevel: 2,
+    JobRole: "Research Scientist",
+    JobSatisfaction: 3,
+    MaritalStatus: "Single",
+    MonthlyIncome: 4500,
+    MonthlyRate: 15000,
+    NumCompaniesWorked: 2,
+    OverTime: "No",
+    PercentSalaryHike: 13,
+    PerformanceRating: 3,
+    RelationshipSatisfaction: 3,
+    StockOptionLevel: 0,
+    TotalWorkingYears: 6,
+    TrainingTimesLastYear: 3,
+    WorkLifeBalance: 3,
+    YearsAtCompany: 3,
+    YearsInCurrentRole: 2,
+    YearsSinceLastPromotion: 1,
+    YearsWithCurrManager: 2,
+  };
+
+  const fields = isPromotion ? promotionFields : attritionFields;
+
+  const [form, setForm] = useState(() =>
+    isPromotion ? promotionDefaults : attritionDefaults
+  );
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   function updateField(e) {
     const { name, value } = e.target;
-
-    const numericFields = [
-      "no_of_trainings",
-      "age",
-      "previous_year_rating",
-      "length_of_service",
-      "awards_won",
-      "avg_training_score",
-    ];
+    const field = fields.find((item) => item.name === name);
+    const numericValue =
+      field?.type === "number" || field?.options?.some(
+        (option) => typeof option === "object" &&
+          option.value === Number(value)
+      );
 
     setForm((previous) => ({
       ...previous,
-      [name]: numericFields.includes(name)
-        ? Number(value)
-        : value,
+      [name]: numericValue ? Number(value) : value,
     }));
 
     setResult(null);
@@ -528,35 +877,37 @@ function PredictionPage({ type }) {
     setResult(null);
     setError("");
 
+    const endpoint = isPromotion
+      ? "http://127.0.0.1:8000/predict/promotion"
+      : "http://127.0.0.1:8000/predict/attrition";
+
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/predict/promotion",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        }
-      );
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
+        const detail = data.detail;
         throw new Error(
-          typeof data.detail === "string"
-            ? data.detail
-            : "Please check the employee details."
+          typeof detail === "string"
+            ? detail
+            : "Please check the entered employee details."
         );
       }
 
       setResult(data);
     } catch (err) {
-      console.error("Promotion prediction error:", err);
+      console.error("Prediction error:", err);
 
       setError(
         err.message === "Failed to fetch"
-          ? "Cannot connect to the ML service. Check that FastAPI is running on port 8000 and CORS is configured."
+          ? "Cannot connect to the ML service. Make sure FastAPI is running on port 8000."
           : err.message || "Unable to generate the prediction."
       );
     } finally {
@@ -564,45 +915,40 @@ function PredictionPage({ type }) {
     }
   }
 
-  if (!isPromotion) {
-    return (
-      <>
-        <PageHeading
-          eyebrow="WORKFORCE RETENTION"
-          title="Attrition Prediction"
-          description="Employee attrition prediction will be connected after its separate ML model and API are ready."
-        />
-
-        <div className="form-card">
-          <h2>Attrition model integration pending</h2>
-          <p>
-            Your promotion model is connected separately. The
-            attrition feature needs its own trained model and
-            prediction endpoint.
-          </p>
-        </div>
-      </>
-    );
-  }
+  const probability = result
+    ? isPromotion
+      ? result.promotion_probability
+      : result.attrition_probability
+    : null;
 
   return (
     <>
       <PageHeading
-        eyebrow="EMPLOYEE GROWTH"
-        title="Promotion Prediction"
-        description="Enter employee details to estimate promotion likelihood using your trained machine learning model."
+        eyebrow={isPromotion ? "EMPLOYEE GROWTH" : "WORKFORCE RETENTION"}
+        title={isPromotion ? "Promotion Prediction" : "Attrition Prediction"}
+        description={
+          isPromotion
+            ? "Enter employee details to estimate promotion likelihood using your trained machine learning model."
+            : "Enter employee details to estimate attrition likelihood using your trained machine learning model."
+        }
       />
 
       <div className="prediction-banner">
         <div className="prediction-banner-icon">
-          <TrendingUp size={27} />
+          {isPromotion ? (
+            <TrendingUp size={27} />
+          ) : (
+            <Activity size={27} />
+          )}
         </div>
 
         <div>
-          <h3>Promotion assessment</h3>
+          <h3>
+            {isPromotion ? "Promotion assessment" : "Attrition assessment"}
+          </h3>
           <p>
-            Submit employee details to receive a model prediction
-            and estimated promotion probability.
+            Submit employee details to receive a prediction and estimated
+            probability from the trained model.
           </p>
         </div>
 
@@ -619,168 +965,43 @@ function PredictionPage({ type }) {
 
         <form onSubmit={submitForm}>
           <div className="form-grid">
-            <label>
-              Department
-              <select
-                name="department"
-                value={form.department}
-                onChange={updateField}
-                required
-              >
-                {[
-                  "Technology",
-                  "Analytics",
-                  "Sales & Marketing",
-                  "Operations",
-                  "Procurement",
-                  "Finance",
-                  "HR",
-                  "Legal",
-                  "R&D",
-                ].map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {fields.map((field) => (
+              <label key={field.name}>
+                {field.label}
 
-            <label>
-              Region
-              <input
-                name="region"
-                value={form.region}
-                onChange={updateField}
-                placeholder="e.g. region_7"
-                required
-              />
-            </label>
+                {field.options ? (
+                  <select
+                    name={field.name}
+                    value={form[field.name]}
+                    onChange={updateField}
+                    required
+                  >
+                    {field.options.map((option) => {
+                      const optionValue =
+                        typeof option === "object" ? option.value : option;
+                      const optionLabel =
+                        typeof option === "object" ? option.label : option;
 
-            <label>
-              Education
-              <select
-                name="education"
-                value={form.education}
-                onChange={updateField}
-                required
-              >
-                <option value="Below Secondary">
-                  Below Secondary
-                </option>
-                <option value="Bachelor's">Bachelor's</option>
-                <option value="Master's & above">
-                  Master's &amp; above
-                </option>
-              </select>
-            </label>
-
-            <label>
-              Gender
-              <select
-                name="gender"
-                value={form.gender}
-                onChange={updateField}
-                required
-              >
-                <option value="m">Male</option>
-                <option value="f">Female</option>
-              </select>
-            </label>
-
-            <label>
-              Recruitment channel
-              <select
-                name="recruitment_channel"
-                value={form.recruitment_channel}
-                onChange={updateField}
-                required
-              >
-                <option value="sourcing">Sourcing</option>
-                <option value="referred">Referred</option>
-                <option value="other">Other</option>
-              </select>
-            </label>
-
-            <label>
-              Age
-              <input
-                name="age"
-                type="number"
-                min="18"
-                max="100"
-                value={form.age}
-                onChange={updateField}
-                required
-              />
-            </label>
-
-            <label>
-              Number of trainings
-              <input
-                name="no_of_trainings"
-                type="number"
-                min="0"
-                max="100"
-                value={form.no_of_trainings}
-                onChange={updateField}
-                required
-              />
-            </label>
-
-            <label>
-              Previous year rating (1–5)
-              <select
-                name="previous_year_rating"
-                value={form.previous_year_rating}
-                onChange={updateField}
-                required
-              >
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Years of service
-              <input
-                name="length_of_service"
-                type="number"
-                min="0"
-                max="60"
-                value={form.length_of_service}
-                onChange={updateField}
-                required
-              />
-            </label>
-
-            <label>
-              Awards won
-              <select
-                name="awards_won"
-                value={form.awards_won}
-                onChange={updateField}
-                required
-              >
-                <option value={0}>No</option>
-                <option value={1}>Yes</option>
-              </select>
-            </label>
-
-            <label>
-              Average training score
-              <input
-                name="avg_training_score"
-                type="number"
-                min="0"
-                max="100"
-                value={form.avg_training_score}
-                onChange={updateField}
-                required
-              />
-            </label>
+                      return (
+                        <option key={String(optionValue)} value={optionValue}>
+                          {optionLabel}
+                        </option>
+                      );
+                    })}
+                  </select>
+                ) : (
+                  <input
+                    name={field.name}
+                    type={field.type || "text"}
+                    value={form[field.name]}
+                    onChange={updateField}
+                    min={field.min}
+                    max={field.max}
+                    required
+                  />
+                )}
+              </label>
+            ))}
           </div>
 
           <button
@@ -790,7 +1011,9 @@ function PredictionPage({ type }) {
           >
             {loading
               ? "Generating prediction..."
-              : "Predict Promotion"}
+              : isPromotion
+                ? "Predict Promotion"
+                : "Predict Attrition"}
             {!loading && <ChevronRight size={17} />}
           </button>
         </form>
@@ -807,10 +1030,8 @@ function PredictionPage({ type }) {
             <div>
               <h3>{result.prediction}</h3>
               <p>
-                Estimated promotion probability:{" "}
-                <strong>
-                  {result.promotion_probability}%
-                </strong>
+                Estimated {isPromotion ? "promotion" : "attrition"} probability:{" "}
+                <strong>{probability}%</strong>
               </p>
               <p>{result.notice}</p>
             </div>
@@ -821,7 +1042,23 @@ function PredictionPage({ type }) {
   );
 }
 
+
+
 function Analytics() {
+  const [selectedDepartment, setSelectedDepartment] = useState("All");
+
+  const filteredDepartments =
+    selectedDepartment === "All"
+      ? departments
+      : departments.filter(
+          (department) => department.name === selectedDepartment
+        );
+
+  const attritionBreakdown = [
+    { name: "Stayed", value: 1233 },
+    { name: "Left", value: 237 },
+  ];
+
   return (
     <>
       <PageHeading
@@ -864,17 +1101,36 @@ function Analytics() {
       </section>
 
       <section className="chart-grid">
+        {/* Promotion chart with department filter */}
         <div className="chart-card">
           <div className="chart-heading">
             <div>
-              <h3>Promotion by department</h3>
-              <p>Department-level promotion rates</p>
+              <h3>Promotion by Department</h3>
+              <p>Department-level promotion rates (%)</p>
             </div>
+
+            <select
+              value={selectedDepartment}
+              onChange={(event) =>
+                setSelectedDepartment(event.target.value)
+              }
+              aria-label="Filter promotion chart by department"
+            >
+              <option value="All">All Departments</option>
+              {departments.map((department) => (
+                <option
+                  key={department.name}
+                  value={department.name}
+                >
+                  {department.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="chart-container">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={departments}>
+              <BarChart data={filteredDepartments}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
@@ -883,22 +1139,83 @@ function Analytics() {
                   dataKey="name"
                   tick={{ fontSize: 10 }}
                 />
-                <YAxis />
-                <Tooltip />
+                <YAxis
+                  domain={[0, "auto"]}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <Tooltip
+                  formatter={(value) => [`${value}%`, "Promotion rate"]}
+                />
                 <Bar
                   dataKey="rate"
+                  name="Promotion rate"
                   fill="#7161f6"
                   radius={[5, 5, 0, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
           </div>
+
+          <p className="chart-note">
+            Department values use the existing department data configured
+            in this application.
+          </p>
         </div>
 
+        {/* Attrition breakdown doughnut chart */}
+        <div className="chart-card">
+          <div className="chart-heading">
+            <div>
+              <h3>Employee Attrition Breakdown</h3>
+              <p>Employee outcomes in the IBM HR dataset</p>
+            </div>
+          </div>
+
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={attritionBreakdown}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={95}
+                  paddingAngle={4}
+                >
+                  <Cell fill="#7161f6" />
+                  <Cell fill="#ff9852" />
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "24px",
+              flexWrap: "wrap",
+            }}
+          >
+            <span>
+              <span style={{ color: "#7161f6" }}>●</span>{" "}
+              Stayed: <strong>1,233 (83.88%)</strong>
+            </span>
+            <span>
+              <span style={{ color: "#ff9852" }}>●</span>{" "}
+              Left: <strong>237 (16.12%)</strong>
+            </span>
+          </div>
+        </div>
+
+        {/* Attrition insights */}
         <div className="chart-card insight-card">
           <div className="chart-heading">
             <div>
-              <h3>Attrition insights</h3>
+              <h3>Attrition Insights</h3>
               <p>Patterns observed in the IBM HR dataset</p>
             </div>
           </div>
@@ -919,9 +1236,7 @@ function Analytics() {
             </span>
             <div>
               <strong>5.13 years</strong>
-              <p>
-                Average years at company for employees who left
-              </p>
+              <p>Average years at company for employees who left</p>
             </div>
           </div>
 
@@ -931,13 +1246,13 @@ function Analytics() {
             </span>
             <div>
               <strong>4,787.09</strong>
-              <p>Average monthly income for attrition = Yes</p>
+              <p>Average monthly income for employees who left</p>
             </div>
           </div>
 
           <p className="chart-note">
-            Descriptive associations do not establish causation.
-            Figures are based on the current EDA output.
+            These are descriptive statistics, not proof of causation.
+            Review predictions alongside relevant employee context.
           </p>
         </div>
       </section>
@@ -945,26 +1260,39 @@ function Analytics() {
   );
 }
 
+
+
 function Datasets() {
   const datasets = [
     {
       name: "Dataset 1 · Employee Promotion",
       description:
-        "Promotion eligibility and employee training analysis",
+        "Employee promotion eligibility, training, and performance analysis.",
       original: "train.csv, test.csv",
       cleaned: "promotion_cleaned.csv",
       notebook: "promotion_eda.ipynb",
       rows: "54,808",
       columns: "13",
+      target: "is_promoted",
+      distribution: [
+        { label: "Promoted", value: "4,668 (8.52%)" },
+        { label: "Not promoted", value: "50,140 (91.48%)" },
+      ],
     },
     {
       name: "Dataset 2 · Employee Attrition",
-      description: "Employee retention and attrition analysis",
+      description:
+        "Employee retention, workplace satisfaction, and attrition analysis.",
       original: "WA_Fn-UseC_-HR-Employee-Attrition.csv",
       cleaned: "attrition_cleaned.csv",
       notebook: "attrition_eda.ipynb",
       rows: "1,470",
       columns: "32",
+      target: "Attrition",
+      distribution: [
+        { label: "Employees who left", value: "237 (16.12%)" },
+        { label: "Employees who stayed", value: "1,233 (83.88%)" },
+      ],
     },
   ];
 
@@ -973,7 +1301,7 @@ function Datasets() {
       <PageHeading
         eyebrow="DATA MANAGEMENT"
         title="Datasets"
-        description="Review the data preparation and exploratory analysis progress."
+        description="Explore dataset preparation, target distributions, and exploratory analysis."
       />
 
       <section className="stats-grid">
@@ -981,14 +1309,14 @@ function Datasets() {
           icon={Database}
           label="Promotion records"
           value="54,808"
-          subtitle="Dataset 1"
+          subtitle="13 columns"
         />
 
         <StatCard
           icon={TrendingUp}
           label="Promoted employees"
           value="4,668"
-          subtitle="8.52% of dataset"
+          subtitle="8.52% of promotion dataset"
           color="green"
         />
 
@@ -996,7 +1324,7 @@ function Datasets() {
           icon={Users}
           label="Attrition records"
           value="1,470"
-          subtitle="Dataset 2"
+          subtitle="32 columns"
           color="blue"
         />
 
@@ -1004,7 +1332,7 @@ function Datasets() {
           icon={Activity}
           label="Attrition rate"
           value="16.12%"
-          subtitle="Employees marked Yes"
+          subtitle="237 employees left"
           color="orange"
         />
       </section>
@@ -1035,6 +1363,23 @@ function Datasets() {
                 <span>Columns</span>
                 <strong>{dataset.columns}</strong>
               </div>
+              <div>
+                <span>Target column</span>
+                <strong>{dataset.target}</strong>
+              </div>
+            </div>
+
+            <div className="dataset-distribution">
+              <h3>Target distribution</h3>
+              {dataset.distribution.map((item) => (
+                <div
+                  className="dataset-distribution-row"
+                  key={item.label}
+                >
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
             </div>
 
             <div className="dataset-files">
@@ -1057,14 +1402,16 @@ function Datasets() {
         <div>
           <strong>Data integrity</strong>
           <p>
-            Promotion and attrition datasets are cleaned and analyzed
-            independently. They must not be merged row by row.
+            The promotion and attrition datasets represent different
+            employee populations and must be processed independently.
+            Their records should not be merged row by row.
           </p>
         </div>
       </div>
     </>
   );
 }
+
 
 function SettingsPage() {
   return (
@@ -1111,6 +1458,8 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/hr-analytics" element={<HRAnalytics />} />
+<Route path="/promotion-prediction" element={<PromotionPrediction />} />
         <Route
           path="/register-company"
           element={<RegisterCompany />}

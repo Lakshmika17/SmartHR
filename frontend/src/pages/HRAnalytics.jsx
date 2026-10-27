@@ -1,5 +1,3 @@
-
-import React from "react";
 import "./HRAnalytics.css";
 
 const departments = [
