@@ -1,12 +1,11 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BrowserRouter,
   Routes,
   Route,
   Navigate,
 } from "react-router-dom";
-
 import {
   LayoutDashboard,
   Target,
@@ -27,7 +26,6 @@ import {
   X,
   CheckCircle2,
 } from "lucide-react";
-
 import {
   ResponsiveContainer,
   BarChart,
@@ -40,22 +38,30 @@ import {
   Pie,
   Cell,
 } from "recharts";
-
 import "./App.css";
-
 import LandingPage from "./LandingPage";
 import Login from "./pages/Login";
 import EmployeeManagement from "./pages/EmployeeManagement";
 import EmployeeProfile from "./pages/EmployeeProfile";
 import RegisterCompany from "./pages/RegisterCompany";
 import HRAnalytics from "./pages/HRAnalytics";
+import Reports from "./pages/Reports";
 import PromotionPrediction from "./pages/PromotionPrediction";
-
+import AdminDashboard from "./pages/AdminDashboard";
+import PromotionManagement from "./pages/PromotionManagement";
+import AdminRoute from "./components/AdminRoute";
+import StaffRoute from "./components/StaffRoute";
+import HRStaffManagement from "./pages/HRStaffManagement";
+import AdminLayout from "./layouts/AdminLayout";
+import CompanyManagement from "./pages/CompanyManagement";
+import AttritionManagement from "./pages/AttritionManagement";
+import AttritionHistory from "./pages/AttritionHistory";
+import { History } from "lucide-react";
+import AdminSettings from "./pages/AdminSettings";
 const promotionData = [
   { name: "Not promoted", value: 50140 },
   { name: "Promoted", value: 4668 },
 ];
-
 const departments = [
   { name: "Technology", rate: 10.8 },
   { name: "Procurement", rate: 9.7 },
@@ -67,27 +73,24 @@ const departments = [
   { name: "HR", rate: 5.6 },
   { name: "Legal", rate: 5.1 },
 ];
-
 const navItems = [
   { label: "Overview", icon: LayoutDashboard },
   { label: "Employee Management", icon: Users },
   { label: "Employee Profile", icon: UserRound },
   { label: "Promotion Prediction", icon: Target },
   { label: "Attrition Prediction", icon: Activity },
+  { label: "Attrition History", icon: History },
   { label: "HR Analytics", icon: ChartNoAxesCombined },
   { label: "Datasets", icon: Database },
 ];
-
-function Dashboard() {
-  const [activePage, setActivePage] = useState("Overview");
+function Dashboard({ initialPage = "Overview", promotionWorkflow = false }) {
+  const [activePage, setActivePage] = useState(initialPage);
   const [search, setSearch] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
-
   function navigate(page) {
     setActivePage(page);
     setMobileMenu(false);
   }
-
   return (
     <div className="app-shell">
       {mobileMenu && (
@@ -97,7 +100,6 @@ function Dashboard() {
           onClick={() => setMobileMenu(false)}
         />
       )}
-
       <aside className={`sidebar ${mobileMenu ? "sidebar-open" : ""}`}>
         <div className="brand">
           <div className="brand-logo">S</div>
@@ -106,11 +108,11 @@ function Dashboard() {
             <span>INTELLIGENCE PLATFORM</span>
           </div>
         </div>
-
         <div className="nav-heading">WORKSPACE</div>
-
         <nav className="navigation">
-          {navItems.map(({ label, icon: Icon }) => (
+          {navItems
+              .filter((item) => promotionWorkflow || item.label !== "Attrition History")
+              .map(({ label, icon: Icon }) => (
             <button
               key={label}
               className={`nav-item ${
@@ -124,7 +126,6 @@ function Dashboard() {
             </button>
           ))}
         </nav>
-
         <div className="sidebar-promo">
           <Sparkles size={23} />
           <h4>Smarter people decisions</h4>
@@ -132,7 +133,6 @@ function Dashboard() {
             Explore workforce patterns with data-driven HR analytics.
           </p>
         </div>
-
         <button
           className="nav-item settings-item"
           onClick={() => navigate("Settings")}
@@ -140,7 +140,6 @@ function Dashboard() {
           <Settings size={20} />
           <span>Settings</span>
         </button>
-
         <div className="sidebar-profile">
           <div className="profile-avatar">HR</div>
           <div>
@@ -149,7 +148,6 @@ function Dashboard() {
           </div>
         </div>
       </aside>
-
       <main className="main-content">
         <header className="topbar">
           <button
@@ -159,13 +157,11 @@ function Dashboard() {
           >
             <Menu size={22} />
           </button>
-
           <div className="breadcrumb">
             <span>Workspace</span>
             <span>/</span>
             <strong>{activePage}</strong>
           </div>
-
           <div className="topbar-actions">
             <div className="search-box">
               <Search size={19} />
@@ -183,7 +179,6 @@ function Dashboard() {
                 </button>
               )}
             </div>
-
             <button
               className="icon-button"
               aria-label="Notifications"
@@ -191,50 +186,45 @@ function Dashboard() {
               <Bell size={20} />
               <span className="notification-dot" />
             </button>
-
             <div className="user-avatar">H</div>
           </div>
         </header>
-
         <div className="page-area">
           {activePage === "Overview" && (
             <Overview navigate={navigate} />
           )}
-
           {activePage === "Employee Management" && (
             <EmployeeManagement />
           )}
-
           {activePage === "Employee Profile" && (
             <EmployeeProfile />
           )}
-
           {activePage === "Promotion Prediction" && (
-            <PredictionPage type="promotion" />
+            <PredictionPage type="promotion" workflow={promotionWorkflow} />
           )}
-
+          {activePage === "Attrition History" && promotionWorkflow && (
+  <AttritionHistory />
+)}
           {activePage === "Attrition Prediction" && (
-            <PredictionPage type="attrition" />
-          )}
-
+  <PredictionPage
+    type="attrition"
+    workflow={promotionWorkflow}
+  />
+)}
           {activePage === "HR Analytics" && <Analytics />}
-
           {activePage === "Datasets" && <Datasets />}
-
           {activePage === "Settings" && <SettingsPage />}
         </div>
-
         <footer className="footer">
           <span>SmartHR</span>
           <span>
-            Employee Promotion &amp; Attrition Prediction System
+            Employee Promotion & Attrition Prediction System
           </span>
         </footer>
       </main>
     </div>
   );
 }
-
 function PageHeading({ eyebrow, title, description }) {
   return (
     <div className="page-heading">
@@ -244,7 +234,6 @@ function PageHeading({ eyebrow, title, description }) {
     </div>
   );
 }
-
 function StatCard({
   icon: Icon,
   label,
@@ -265,7 +254,6 @@ function StatCard({
     </div>
   );
 }
-
 function Overview({ navigate }) {
   return (
     <>
@@ -277,30 +265,25 @@ function Overview({ navigate }) {
             Explore workforce data and make informed HR decisions.
           </p>
         </div>
-
         <div className="dataset-loaded">
           <span className="status-dot" />
           Promotion dataset loaded
         </div>
       </section>
-
       <section className="hero-banner">
         <div className="hero-copy">
           <span className="hero-label">
             <Sparkles size={15} /> SMARTER HR DECISIONS
           </span>
-
           <h2>
             Understand your people.
             <br />
             Plan your next move.
           </h2>
-
           <p>
             Discover promotion patterns and prepare for data-driven
             workforce insights.
           </p>
-
           <button
             className="hero-button"
             onClick={() => navigate("Promotion Prediction")}
@@ -308,21 +291,17 @@ function Overview({ navigate }) {
             Explore promotion <ChevronRight size={18} />
           </button>
         </div>
-
         <div className="hero-visual">
           <div className="hero-orbit orbit-one" />
           <div className="hero-orbit orbit-two" />
-
           <div className="floating-tile tile-one">
             <TrendingUp size={27} />
             <strong>People analytics</strong>
-            <span>Patterns &amp; insights</span>
+            <span>Patterns & insights</span>
           </div>
-
           <div className="floating-center">
             <Users size={49} />
           </div>
-
           <div className="floating-tile tile-two">
             <Users size={25} />
             <strong>Workforce</strong>
@@ -330,7 +309,6 @@ function Overview({ navigate }) {
           </div>
         </div>
       </section>
-
       <div className="section-title-row">
         <div>
           <h2>Promotion snapshot</h2>
@@ -338,7 +316,6 @@ function Overview({ navigate }) {
         </div>
         <span className="dataset-tag">DATASET 01</span>
       </div>
-
       <section className="stats-grid">
         <StatCard
           icon={Users}
@@ -346,7 +323,6 @@ function Overview({ navigate }) {
           value="54,808"
           subtitle="Employee records available"
         />
-
         <StatCard
           icon={TrendingUp}
           label="Promoted employees"
@@ -354,7 +330,6 @@ function Overview({ navigate }) {
           subtitle="8.52% of the dataset"
           color="green"
         />
-
         <StatCard
           icon={Target}
           label="Not promoted"
@@ -362,7 +337,6 @@ function Overview({ navigate }) {
           subtitle="91.48% of the dataset"
           color="orange"
         />
-
         <StatCard
           icon={GraduationCap}
           label="Promoted avg. score"
@@ -371,7 +345,6 @@ function Overview({ navigate }) {
           color="blue"
         />
       </section>
-
       <section className="chart-grid">
         <div className="chart-card">
           <div className="chart-heading">
@@ -380,7 +353,6 @@ function Overview({ navigate }) {
               <p>Percentage of employees promoted</p>
             </div>
           </div>
-
           <div className="chart-container">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -414,13 +386,11 @@ function Overview({ navigate }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-
           <p className="chart-note">
             Department rates are illustrative; verify against the
             cleaned data before final submission.
           </p>
         </div>
-
         <div className="chart-card">
           <div className="chart-heading">
             <div>
@@ -428,7 +398,6 @@ function Overview({ navigate }) {
               <p>Training dataset target breakdown</p>
             </div>
           </div>
-
           <div className="donut-layout">
             <div className="donut-chart">
               <ResponsiveContainer width="100%" height="100%">
@@ -447,13 +416,11 @@ function Overview({ navigate }) {
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-
               <div className="donut-center">
                 <strong>8.52%</strong>
                 <span>Promoted</span>
               </div>
             </div>
-
             <div className="legend">
               <div>
                 <span className="legend-dot purple-dot" />
@@ -463,7 +430,6 @@ function Overview({ navigate }) {
                 </span>
                 <b>91.48%</b>
               </div>
-
               <div>
                 <span className="legend-dot green-dot" />
                 <span>
@@ -479,11 +445,8 @@ function Overview({ navigate }) {
     </>
   );
 }
-
-
-function PredictionPage({ type }) {
+function PredictionPage({ type, workflow = false }) {
   const isPromotion = type === "promotion";
-
   const promotionFields = [
     {
       name: "department",
@@ -571,7 +534,6 @@ function PredictionPage({ type }) {
       max: 100,
     },
   ];
-
   const attritionFields = [
     { name: "Age", label: "Age", type: "number", min: 18, max: 100 },
     {
@@ -796,7 +758,6 @@ function PredictionPage({ type }) {
       min: 0,
     },
   ];
-
   const promotionDefaults = {
     department: "Technology",
     region: "region_7",
@@ -810,7 +771,6 @@ function PredictionPage({ type }) {
     awards_won: 0,
     avg_training_score: 82,
   };
-
   const attritionDefaults = {
     Age: 29,
     BusinessTravel: "Travel_Rarely",
@@ -843,16 +803,74 @@ function PredictionPage({ type }) {
     YearsSinceLastPromotion: 1,
     YearsWithCurrManager: 2,
   };
-
   const fields = isPromotion ? promotionFields : attritionFields;
-
   const [form, setForm] = useState(() =>
     isPromotion ? promotionDefaults : attritionDefaults
   );
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [employees, setEmployees] = useState([]);
+  const [employeeId, setEmployeeId] = useState("");
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [employeesError, setEmployeesError] = useState("");
+  const apiBase = (import.meta.env.VITE_API_URL || "http://localhost:5000")
+    .replace(/\/api\/?$/, "")
+    .replace(/\/$/, "")
+  useEffect(() => {
+    if (!workflow) return;
+    const controller = new AbortController();
+    const loadEmployees = async () => {
+      setEmployeesLoading(true);
+      setEmployeesError("");
+      try {
+        const token = localStorage.getItem("smarthr_token");
+        if (!token) throw new Error("Please log in to select an employee.");
+        const response = await fetch(`${apiBase}/api/employees`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Unable to load employees.");
+        setEmployees(Array.isArray(data.employees) ? data.employees : []);
+      } catch (err) {
+        if (err.name !== "AbortError") setEmployeesError(err.message);
+      } finally {
+        if (!controller.signal.aborted) setEmployeesLoading(false);
+      }
+    };
+    loadEmployees();
+    return () => controller.abort();
+  }, [apiBase, isPromotion, workflow]);
+  function selectEmployee(id) {
+    setEmployeeId(id);
+    setResult(null);
+    setError("");
+    const employee = employees.find((item) => String(item._id) === id);
+    if (!employee) return;
+    if (!isPromotion) {
+      setForm(Object.fromEntries(attritionFields.map((field) => [field.name, ""])));
+      return;
+    }
+    // Never assume experience means years of service or that a department
+    // name matches the ML training categories.
+    const mlDepartments = promotionFields[0].options;
+    const rating = Number(employee.rating);
+    const score = Number(employee.training);
+    setForm({
+      department: mlDepartments.includes(employee.department) ? employee.department : "",
+      region: "",
+      education: "",
+      gender: "",
+      recruitment_channel: "",
+      no_of_trainings: "",
+      age: "",
+      previous_year_rating: employee.rating != null && Number.isFinite(rating) && rating >= 1 && rating <= 5 ? rating : "",
+      length_of_service: "",
+      awards_won: "",
+      avg_training_score: employee.training != null && Number.isFinite(score) && score >= 0 && score <= 100 ? score : "",
+    });
+  }
   function updateField(e) {
     const { name, value } = e.target;
     const field = fields.find((item) => item.name === name);
@@ -861,66 +879,96 @@ function PredictionPage({ type }) {
         (option) => typeof option === "object" &&
           option.value === Number(value)
       );
-
     setForm((previous) => ({
       ...previous,
-      [name]: numericValue ? Number(value) : value,
+      [name]: value === "" ? "" : numericValue ? Number(value) : value,
     }));
-
     setResult(null);
     setError("");
   }
-
   async function submitForm(e) {
     e.preventDefault();
     setLoading(true);
     setResult(null);
     setError("");
-
-    const endpoint = isPromotion
-      ? "http://127.0.0.1:8000/predict/promotion"
-      : "http://127.0.0.1:8000/predict/attrition";
-
+    const endpoint = workflow
+      ? isPromotion
+        ? `${apiBase}/api/promotions`
+        : `${apiBase}/api/attrition`
+      : isPromotion
+        ? "http://127.0.0.1:8000/predict/promotion"
+        : "http://127.0.0.1:8000/predict/attrition";
     try {
+     if (workflow && !employeeId) {       throw new Error("Please select an employee before submitting.");
+      }
+      const token = localStorage.getItem("smarthr_token");
+      if (workflow && !token) {
+        throw new Error("Please log in again before submitting.");
+      }
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(workflow ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(
+          workflow
+            ? { employeeId, modelInputs: form }
+            : form
+        ),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
         const detail = data.detail;
         throw new Error(
-          typeof detail === "string"
+          data.message ||
+          (typeof detail === "string"
             ? detail
-            : "Please check the entered employee details."
+            : "Please check the entered employee details.")
         );
       }
-
-      setResult(data);
+      if (workflow && !isPromotion) {
+        const assessment = data.assessment;
+        if (!assessment) throw new Error("The backend did not return a saved assessment.");
+        const mlPrediction = assessment.modelPrediction;
+        const predictionLabel = mlPrediction && typeof mlPrediction === "object"
+          ? (mlPrediction.prediction ?? mlPrediction.attrition_prediction ?? mlPrediction.attrition ?? "Assessment submitted")
+          : (mlPrediction ?? "Assessment submitted");
+        setResult({
+          prediction: typeof predictionLabel === "object" ? JSON.stringify(predictionLabel) : String(predictionLabel),
+          attrition_probability: assessment.attritionProbability,
+          notice: "Assessment submitted for HR Admin review.",
+          status: assessment.status,
+          riskLevel: assessment.riskLevel,
+        });
+      } else if (workflow && isPromotion) {
+        setResult({
+          ...data.request,
+          prediction: data.request.modelPrediction,
+          promotion_probability: data.request.promotionProbability,
+          notice: "Request submitted for HR Admin review.",
+        });
+      } else {
+        setResult(data);
+      }
     } catch (err) {
       console.error("Prediction error:", err);
-
       setError(
         err.message === "Failed to fetch"
-          ? "Cannot connect to the ML service. Make sure FastAPI is running on port 8000."
+          ? workflow
+            ? "Cannot connect to the SmartHR backend. Make sure Express is running on port 5000."
+            : "Cannot connect to the ML service. Make sure FastAPI is running on port 8000."
           : err.message || "Unable to generate the prediction."
       );
     } finally {
       setLoading(false);
     }
   }
-
   const probability = result
     ? isPromotion
       ? result.promotion_probability
       : result.attrition_probability
     : null;
-
   return (
     <>
       <PageHeading
@@ -932,7 +980,6 @@ function PredictionPage({ type }) {
             : "Enter employee details to estimate attrition likelihood using your trained machine learning model."
         }
       />
-
       <div className="prediction-banner">
         <div className="prediction-banner-icon">
           {isPromotion ? (
@@ -941,7 +988,6 @@ function PredictionPage({ type }) {
             <Activity size={27} />
           )}
         </div>
-
         <div>
           <h3>
             {isPromotion ? "Promotion assessment" : "Attrition assessment"}
@@ -951,24 +997,52 @@ function PredictionPage({ type }) {
             probability from the trained model.
           </p>
         </div>
-
         <span className="pending-badge">
           {loading ? "Predicting..." : "ML model connected"}
         </span>
       </div>
-
       <div className="form-card">
         <h2>Employee information</h2>
         <p className="form-intro">
           Complete all fields to generate a prediction.
         </p>
-
         <form onSubmit={submitForm}>
+          {workflow && (
+            <div style={{ marginBottom: "20px" }}>
+              <label htmlFor="promotion-employee" style={{ display: "block", marginBottom: "8px" }}>
+                Select employee from your company
+              </label>
+              <select
+                id="promotion-employee"
+                value={employeeId}
+                onChange={(event) => selectEmployee(event.target.value)}
+                required
+                disabled={employeesLoading}
+                style={{ width: "100%", padding: "12px", borderRadius: "8px" }}
+              >
+                <option value="">{employeesLoading ? "Loading employees..." : "Choose an employee"}</option>
+                {employees.filter((employee) => employee.status !== "Inactive").map((employee) => (
+                  <option key={employee._id} value={employee._id}>
+                    {employee.name} — {employee.department} ({employee.email})
+                  </option>
+                ))}
+              </select>
+              {employeesError && <p role="alert" style={{ color: "#b42318" }}>{employeesError}</p>}
+              {!employeesLoading && !employeesError && employees.length === 0 && (
+                <p>No employees found. Add an employee in Employee Management first.</p>
+              )}
+              {employeeId && (
+                <p className="form-intro" style={{ marginTop: "8px" }}>
+                  Available rating and training score are prefilled. Confirm all remaining ML inputs.
+                  If the company department is not a training category, select the correct model category manually.
+                </p>
+              )}
+            </div>
+          )}
           <div className="form-grid">
             {fields.map((field) => (
               <label key={field.name}>
                 {field.label}
-
                 {field.options ? (
                   <select
                     name={field.name}
@@ -976,12 +1050,12 @@ function PredictionPage({ type }) {
                     onChange={updateField}
                     required
                   >
+                    {workflow && <option value="">Select {field.label}</option>}
                     {field.options.map((option) => {
                       const optionValue =
                         typeof option === "object" ? option.value : option;
                       const optionLabel =
                         typeof option === "object" ? option.label : option;
-
                       return (
                         <option key={String(optionValue)} value={optionValue}>
                           {optionLabel}
@@ -1003,32 +1077,30 @@ function PredictionPage({ type }) {
               </label>
             ))}
           </div>
-
           <button
             className="primary-button"
             type="submit"
-            disabled={loading}
+            disabled={loading || (workflow && (!employeeId || !!result))}
           >
             {loading
               ? "Generating prediction..."
               : isPromotion
-                ? "Predict Promotion"
-                : "Predict Attrition"}
+                ? workflow ? "Submit Promotion Request" : "Predict Promotion"
+                : workflow ? "Submit Attrition Assessment" : "Predict Attrition"}
             {!loading && <ChevronRight size={17} />}
           </button>
         </form>
-
         {error && (
           <div className="notice-box" role="alert">
             <p>{error}</p>
           </div>
         )}
-
         {result && (
           <div className="notice-box" aria-live="polite">
             <CheckCircle2 size={20} />
             <div>
               <h3>{result.prediction}</h3>
+              {workflow && <p><strong>Status: {result.status || "Pending HR Admin review"}</strong></p>}
               <p>
                 Estimated {isPromotion ? "promotion" : "attrition"} probability:{" "}
                 <strong>{probability}%</strong>
@@ -1041,24 +1113,18 @@ function PredictionPage({ type }) {
     </>
   );
 }
-
-
-
 function Analytics() {
   const [selectedDepartment, setSelectedDepartment] = useState("All");
-
   const filteredDepartments =
     selectedDepartment === "All"
       ? departments
       : departments.filter(
           (department) => department.name === selectedDepartment
         );
-
   const attritionBreakdown = [
     { name: "Stayed", value: 1233 },
     { name: "Left", value: 237 },
   ];
-
   return (
     <>
       <PageHeading
@@ -1066,7 +1132,6 @@ function Analytics() {
         title="HR Analytics"
         description="Explore descriptive insights from the available datasets."
       />
-
       <section className="stats-grid">
         <StatCard
           icon={Users}
@@ -1074,7 +1139,6 @@ function Analytics() {
           value="54,808"
           subtitle="Dataset 1"
         />
-
         <StatCard
           icon={TrendingUp}
           label="Promotion rate"
@@ -1082,7 +1146,6 @@ function Analytics() {
           subtitle="Employees promoted"
           color="green"
         />
-
         <StatCard
           icon={BriefcaseBusiness}
           label="Attrition records"
@@ -1090,7 +1153,6 @@ function Analytics() {
           subtitle="Dataset 2"
           color="blue"
         />
-
         <StatCard
           icon={Activity}
           label="Attrition rate"
@@ -1099,7 +1161,6 @@ function Analytics() {
           color="orange"
         />
       </section>
-
       <section className="chart-grid">
         {/* Promotion chart with department filter */}
         <div className="chart-card">
@@ -1108,7 +1169,6 @@ function Analytics() {
               <h3>Promotion by Department</h3>
               <p>Department-level promotion rates (%)</p>
             </div>
-
             <select
               value={selectedDepartment}
               onChange={(event) =>
@@ -1127,7 +1187,6 @@ function Analytics() {
               ))}
             </select>
           </div>
-
           <div className="chart-container">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={filteredDepartments}>
@@ -1155,13 +1214,11 @@ function Analytics() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-
           <p className="chart-note">
             Department values use the existing department data configured
             in this application.
           </p>
         </div>
-
         {/* Attrition breakdown doughnut chart */}
         <div className="chart-card">
           <div className="chart-heading">
@@ -1170,7 +1227,6 @@ function Analytics() {
               <p>Employee outcomes in the IBM HR dataset</p>
             </div>
           </div>
-
           <div className="chart-container">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -1191,7 +1247,6 @@ function Analytics() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-
           <div
             style={{
               display: "flex",
@@ -1210,7 +1265,6 @@ function Analytics() {
             </span>
           </div>
         </div>
-
         {/* Attrition insights */}
         <div className="chart-card insight-card">
           <div className="chart-heading">
@@ -1219,7 +1273,6 @@ function Analytics() {
               <p>Patterns observed in the IBM HR dataset</p>
             </div>
           </div>
-
           <div className="insight-item">
             <span className="insight-icon orange">
               <Activity size={19} />
@@ -1229,7 +1282,6 @@ function Analytics() {
               <p>Among employees who work overtime</p>
             </div>
           </div>
-
           <div className="insight-item">
             <span className="insight-icon purple">
               <BriefcaseBusiness size={19} />
@@ -1239,7 +1291,6 @@ function Analytics() {
               <p>Average years at company for employees who left</p>
             </div>
           </div>
-
           <div className="insight-item">
             <span className="insight-icon green">
               <Users size={19} />
@@ -1249,7 +1300,6 @@ function Analytics() {
               <p>Average monthly income for employees who left</p>
             </div>
           </div>
-
           <p className="chart-note">
             These are descriptive statistics, not proof of causation.
             Review predictions alongside relevant employee context.
@@ -1259,9 +1309,6 @@ function Analytics() {
     </>
   );
 }
-
-
-
 function Datasets() {
   const datasets = [
     {
@@ -1295,7 +1342,6 @@ function Datasets() {
       ],
     },
   ];
-
   return (
     <>
       <PageHeading
@@ -1303,7 +1349,6 @@ function Datasets() {
         title="Datasets"
         description="Explore dataset preparation, target distributions, and exploratory analysis."
       />
-
       <section className="stats-grid">
         <StatCard
           icon={Database}
@@ -1311,7 +1356,6 @@ function Datasets() {
           value="54,808"
           subtitle="13 columns"
         />
-
         <StatCard
           icon={TrendingUp}
           label="Promoted employees"
@@ -1319,7 +1363,6 @@ function Datasets() {
           subtitle="8.52% of promotion dataset"
           color="green"
         />
-
         <StatCard
           icon={Users}
           label="Attrition records"
@@ -1327,7 +1370,6 @@ function Datasets() {
           subtitle="32 columns"
           color="blue"
         />
-
         <StatCard
           icon={Activity}
           label="Attrition rate"
@@ -1336,7 +1378,6 @@ function Datasets() {
           color="orange"
         />
       </section>
-
       <div className="dataset-list">
         {datasets.map((dataset, index) => (
           <div className="dataset-card" key={dataset.name}>
@@ -1348,12 +1389,10 @@ function Datasets() {
                 <h2>{dataset.name}</h2>
                 <p>{dataset.description}</p>
               </div>
-
               <span className="dataset-status success">
                 <CheckCircle2 size={15} /> Cleaned
               </span>
             </div>
-
             <div className="dataset-metrics">
               <div>
                 <span>Records</span>
@@ -1368,7 +1407,6 @@ function Datasets() {
                 <strong>{dataset.target}</strong>
               </div>
             </div>
-
             <div className="dataset-distribution">
               <h3>Target distribution</h3>
               {dataset.distribution.map((item) => (
@@ -1381,7 +1419,6 @@ function Datasets() {
                 </div>
               ))}
             </div>
-
             <div className="dataset-files">
               <p>
                 <strong>Original file:</strong> {dataset.original}
@@ -1396,7 +1433,6 @@ function Datasets() {
           </div>
         ))}
       </div>
-
       <div className="dataset-note">
         <Database size={20} />
         <div>
@@ -1411,8 +1447,6 @@ function Datasets() {
     </>
   );
 }
-
-
 function SettingsPage() {
   return (
     <>
@@ -1421,7 +1455,6 @@ function SettingsPage() {
         title="Settings"
         description="SmartHR workspace information."
       />
-
       <div className="form-card">
         <div className="insight-item">
           <span className="insight-icon purple">
@@ -1430,11 +1463,10 @@ function SettingsPage() {
           <div>
             <strong>SmartHR Intelligence Platform</strong>
             <p>
-              Employee Promotion &amp; Attrition Prediction System
+              Employee Promotion & Attrition Prediction System
             </p>
           </div>
         </div>
-
         <div className="insight-item">
           <span className="insight-icon green">
             <Database size={20} />
@@ -1450,27 +1482,46 @@ function SettingsPage() {
     </>
   );
 }
-
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register-company" element={<RegisterCompany />} />
+        {/* Existing dashboard and standalone pages */}
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/hr-analytics" element={<HRAnalytics />} />
-<Route path="/promotion-prediction" element={<PromotionPrediction />} />
-        <Route
-          path="/register-company"
-          element={<RegisterCompany />}
-        />
-        <Route
-          path="*"
-          element={<Navigate to="/" replace />}
-        />
+        <Route path="/promotion-prediction" element={<PromotionPrediction />} />
+        {/* HR Staff uses the existing dashboard */}
+        <Route element={<StaffRoute />}>
+          <Route path="/staff/dashboard" element={<Dashboard promotionWorkflow />} />
+        </Route>
+        {/* Admin-only routes; the layout currently renders Outlet only */}
+        <Route element={<AdminRoute />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/staff" element={<HRStaffManagement />} />
+            <Route path="/admin/employees" element={<EmployeeManagement />} />
+            <Route path="/admin/employee-profile" element={<Dashboard initialPage="Employee Profile" />} />
+            <Route path="/admin/promotion" element={<PromotionManagement />} />
+            <Route path="/admin/attrition" element={<AttritionManagement />} />
+            <Route path="/admin/analytics" element={<HRAnalytics />} />
+            <Route path="/admin/reports" element={<Reports />} />
+            <Route path="/admin/datasets" element={<Dashboard initialPage="Datasets" />} />
+            <Route
+  path="/admin/settings"
+  element={<AdminSettings />}
+/>
+            <Route
+  path="/admin/company"
+  element={<CompanyManagement />}
+/>
+          </Route>
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
 export default App;

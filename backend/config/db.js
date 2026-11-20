@@ -1,13 +1,23 @@
-
 const mongoose = require("mongoose");
 
-async function connectDB() {
-  if (!process.env.MONGODB_URI) {
-    throw new Error("MONGODB_URI is missing from backend/.env");
-  }
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(
+      process.env.MONGODB_URI
+    );
 
-  await mongoose.connect(process.env.MONGODB_URI);
-  console.log("MongoDB connected successfully");
-}
+    console.log(
+      "MongoDB connected:",
+      conn.connection.name
+    );
+  } catch (error) {
+    console.error(
+      "MongoDB connection error:",
+      error.message
+    );
+
+    process.exit(1);
+  }
+};
 
 module.exports = connectDB;

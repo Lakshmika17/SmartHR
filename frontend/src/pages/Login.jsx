@@ -1,274 +1,128 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, BarChart3, BriefcaseBusiness, CheckCircle2, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
 import { loginUser } from "../services/authService";
-import {
-  Eye,
-  EyeOff,
-  Mail,
-  LockKeyhole,
-  Users,
-  ArrowRight,
-  ShieldCheck,
-  Building2,
-} from "lucide-react";
 import "./Login.css";
 
 export default function Login() {
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [role, setRole] = useState("HR_ADMIN");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
-
+  async function handleLogin(event) {
+    event.preventDefault();
     setError("");
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    const email = formData.email.trim().toLowerCase();
-    const password = formData.password;
-
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       setError("Please enter your email and password.");
       return;
     }
-
     try {
       setLoading(true);
-
-      const response = await loginUser({ email, password });
-
-      const allowedRoles = ["HR_ADMIN", "HR_STAFF"];
-      const user = response?.user;
-
-      if (
-        !response?.token ||
-        !user ||
-        !allowedRoles.includes(user.role) ||
-        !user.company?.id
-      ) {
-        throw new Error(
-          "Your account information is incomplete. Please contact your administrator."
-        );
+      const response = await loginUser({ email: email.trim().toLowerCase(), password, role });
+      if (!response?.success || !response?.token || !response?.user) {
+        throw new Error("Invalid login response.");
       }
-
-      // Save the authenticated session information.
+      if (response.user.role !== role) throw new Error("Account role mismatch.");
+      if (!["HR_ADMIN", "HR_STAFF"].includes(response.user.role)) {
+        throw new Error("Unsupported account role.");
+      }
       localStorage.setItem("smarthr_token", response.token);
-      localStorage.setItem("smarthr_user", JSON.stringify(user));
-
-      // Both roles currently use the existing dashboard route.
-      // Role-specific navigation will be implemented separately.
-      navigate("/dashboard", { replace: true });
+      localStorage.setItem("smarthr_user", JSON.stringify(response.user));
+      navigate(response.user.role === "HR_ADMIN" ? "/admin/dashboard" : "/staff/dashboard", { replace: true });
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Login failed. Please try again."
-      );
+      setError(err?.response?.data?.message || err?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="login-shell">
-      {/* ---------- Navbar ---------- */}
       <header className="login-navbar">
-        <Link to="/" className="login-nav-brand">
-          <span className="login-nav-brand-icon">S</span>
-          <span className="login-nav-brand-text">
-            SmartHR
-            <small>Intelligent HR analytics</small>
-          </span>
+        <Link to="/" className="login-nav-brand" aria-label="SmartHR home">
+          <span className="login-nav-brand-icon"><BriefcaseBusiness size={21} /></span>
+          <span className="login-nav-brand-text">SmartHR<small>Intelligent HR Management</small></span>
         </Link>
-
-        <nav className="login-nav-links" aria-label="Primary">
+        <nav className="login-nav-links" aria-label="Main navigation">
           <Link to="/">Home</Link>
-          <a href="/#features">Features</a>
-          <a href="/#workflow">How it works</a>
+          <a href="#features">Features</a>
+          <a href="#about">About SmartHR</a>
         </nav>
-
-        <Link to="/register-company" className="login-nav-cta">
-          <Building2 size={16} />
-          Register company
-        </Link>
+        <Link className="login-nav-cta" to="/register-company">Get Started <ArrowRight size={16} /></Link>
       </header>
 
       <main className="login-page">
-        <section className="login-visual">
+        <section className="login-visual" id="features" aria-label="SmartHR benefits">
           <div className="visual-content">
-            <span className="visual-label">
-              INTELLIGENT HR MANAGEMENT
-            </span>
-
-            <h1>
-              Make smarter
-              <br />
-              <span>people decisions.</span>
-            </h1>
-
-            <p>
-              Predict employee promotions, identify attrition risks,
-              and turn workforce data into actionable insights
-              across your organization.
-            </p>
-
+            <span className="visual-label">SMARTER PEOPLE MANAGEMENT</span>
+            <h1>Make better HR decisions with <span>SmartHR.</span></h1>
+            <p>One secure workspace for employee management, promotion insights, attrition risk assessments and meaningful workforce analytics.</p>
             <div className="visual-features">
-              <div>
-                <ShieldCheck size={20} />
-                <span>Secure, role-based access</span>
-              </div>
-
-              <div>
-                <Users size={20} />
-                <span>Multiple HR users per company</span>
-              </div>
-
-              <div>
-                <Building2 size={20} />
-                <span>Company-specific workforce insights</span>
-              </div>
+              <div><UsersRound size={21} /><span>Centralized employee and HR management</span></div>
+              <div><BarChart3 size={21} /><span>Data-driven promotion and attrition insights</span></div>
+              <div><ShieldCheck size={21} /><span>Role-based access for Admin and HR Staff</span></div>
             </div>
           </div>
-
-          <p className="visual-footer">
-            Smarter workforce. Better decisions.
-          </p>
+          <p className="visual-footer">Built for efficient, informed HR workflows.</p>
         </section>
 
-        <section className="login-form-section">
+        <section className="login-form-section" aria-labelledby="login-title">
           <div className="login-card">
             <div className="login-heading">
               <span className="welcome-label">WELCOME BACK</span>
-              <h2>Welcome to SmartHR</h2>
-              <p>
-                Sign in using your authorized HR account.
-              </p>
+              <h2 id="login-title">Sign in to SmartHR</h2>
+              <p>Select your account type and enter your credentials to continue.</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="login-form">
-              <div className="form-group">
-                <label htmlFor="email">Work email address</label>
-
-                <div className="input-wrapper">
-                  <Mail size={19} />
-
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="you@company.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    autoComplete="username"
-                    required
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-
-                <div className="input-wrapper">
-                  <LockKeyhole size={19} />
-
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    autoComplete="current-password"
-                    required
-                    disabled={loading}
-                  />
-
-                  <button
-                    type="button"
-                    className="password-toggle"
-                    onClick={() => setShowPassword((previous) => !previous)}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                    disabled={loading}
-                  >
-                    {showPassword ? (
-                      <EyeOff size={19} />
-                    ) : (
-                      <Eye size={19} />
-                    )}
+            <form className="login-form" onSubmit={handleLogin}>
+              <div className="role-selection">
+                <span className="role-selection-label" id="login-role-label">Login as</span>
+                <div className="role-options" role="group" aria-labelledby="login-role-label">
+                  <button type="button" className={`role-option ${role === "HR_ADMIN" ? "active" : ""}`} aria-pressed={role === "HR_ADMIN"} disabled={loading} onClick={() => setRole("HR_ADMIN")}>
+                    <ShieldCheck size={23} /><span>HR Admin</span><small>Manage your organization</small>
+                  </button>
+                  <button type="button" className={`role-option ${role === "HR_STAFF" ? "active" : ""}`} aria-pressed={role === "HR_STAFF"} disabled={loading} onClick={() => setRole("HR_STAFF")}>
+                    <UsersRound size={23} /><span>HR Staff</span><small>Manage HR workflows</small>
                   </button>
                 </div>
               </div>
 
-              {error && (
-                <div className="login-error" role="alert">
-                  {error}
+              <div className="form-group">
+                <label htmlFor="login-email">Email address</label>
+                <div className="input-wrapper"><Mail size={19} />
+                  <input id="login-email" type="email" placeholder="Enter your registered email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required disabled={loading} />
                 </div>
-              )}
-
-              <button
-                type="submit"
-                className="login-submit"
-                disabled={loading}
-              >
-                {loading ? "Signing in..." : "Sign in to SmartHR"}
-
-                {!loading && <ArrowRight size={19} />}
+              </div>
+              <div className="form-group">
+                <label htmlFor="login-password">Password</label>
+                <div className="input-wrapper"><LockKeyhole size={19} />
+                  <input id="login-password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required disabled={loading} />
+                  <button type="button" className="password-toggle" aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} onClick={() => setShowPassword((v) => !v)}>
+                    {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                  </button>
+                </div>
+              </div>
+              {error && <div className="login-error" role="alert">{error}</div>}
+              <button className="login-submit" type="submit" disabled={loading}>
+                {loading ? "Signing in..." : <>Sign In <ArrowRight size={18} /></>}
               </button>
             </form>
-
-            <div className="login-security">
-              <ShieldCheck size={17} />
-              <span>Secure access for authorized HR personnel</span>
-            </div>
-
-            <p className="login-bottom">
-              SmartHR · Employee Promotion & Attrition Prediction
-            </p>
+            <p className="login-security"><ShieldCheck size={16} /> Secure access to your SmartHR workspace</p>
+            <p className="login-bottom">New to SmartHR? <Link to="/register-company">Register your company</Link></p>
           </div>
         </section>
       </main>
 
-      {/* ---------- Footer ---------- */}
-      <footer className="login-footer">
+      <footer className="login-footer" id="about">
         <div className="login-footer-inner">
-          <div className="login-footer-about">
-            <strong>SmartHR</strong>
-            <p>
-              Employee Promotion &amp; Attrition Prediction System Using
-              Machine Learning
-            </p>
-          </div>
-
-          <nav className="login-footer-links" aria-label="Footer">
-            <Link to="/">Home</Link>
-            <a href="/#features">Features</a>
-            <a href="/#workflow">How it works</a>
-            <Link to="/register-company">Register company</Link>
-          </nav>
+          <div className="login-footer-about"><strong>SmartHR</strong><p>Intelligent HR management for employee records, prediction workflows, analytics and reporting.</p></div>
+          <div className="login-footer-links"><Link to="/">Home</Link><a href="#features">Features</a><Link to="/register-company">Register Company</Link></div>
         </div>
-
-        <div className="login-footer-bottom">
-          © {new Date().getFullYear()} SmartHR. All rights reserved.
-        </div>
+        <div className="login-footer-bottom">© {new Date().getFullYear()} SmartHR. All rights reserved.</div>
       </footer>
     </div>
   );

@@ -1,13 +1,48 @@
 
 const express = require("express");
 const mongoose = require("mongoose");
+
 const Employee = require("../models/Employee");
+const Department = require("../models/Department");
+
 const { requireAuth } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 // Every employee request requires a valid login.
 router.use(requireAuth);
+
+// Validate a new department assignment against MongoDB.
+async function validateDepartment(companyId, departmentName) {
+  if (
+    typeof departmentName !== "string" ||
+    !departmentName.trim()
+  ) {
+    return {
+      valid: false,
+      message: "Please select a department.",
+    };
+  }
+
+  const department = await Department.findOne({
+    company: companyId,
+    name: departmentName.trim(),
+    isActive: true,
+  });
+
+  if (!department) {
+    return {
+      valid: false,
+      message:
+        "Selected department does not exist or is inactive in your company.",
+    };
+  }
+
+  return {
+    valid: true,
+    name: department.name,
+  };
+}
 
 // GET /api/employees - List employees for the logged-in user's company.
 router.get("/", async (req, res) => {
@@ -19,7 +54,10 @@ router.get("/", async (req, res) => {
     res.status(200).json({ employees });
   } catch (error) {
     console.error("Fetch employees:", error.message);
-    res.status(500).json({ message: "Unable to fetch employees." });
+
+    res.status(500).json({
+      message: "Unable to fetch employees.",
+    });
   }
 });
 
@@ -37,20 +75,36 @@ router.post("/", async (req, res) => {
     } = req.body;
 
     if (
-      !name?.trim() ||
-      !email?.trim() ||
-      !department?.trim() ||
-      !role?.trim()
+      typeof name !== "string" ||
+      !name.trim() ||
+      typeof email !== "string" ||
+      !email.trim() ||
+      typeof department !== "string" ||
+      !department.trim() ||
+      typeof role !== "string" ||
+      !role.trim()
     ) {
       return res.status(400).json({
         message: "Name, email, department and role are required.",
       });
     }
 
+    // NEW: Department must exist and be active in MongoDB.
+    const departmentCheck = await validateDepartment(
+      req.user.companyId,
+      department
+    );
+
+    if (!departmentCheck.valid) {
+      return res.status(400).json({
+        message: departmentCheck.message,
+      });
+    }
+
     const employee = await Employee.create({
       name: name.trim(),
       email: email.trim().toLowerCase(),
-      department: department.trim(),
+      department: departmentCheck.name,
       role: role.trim(),
       experience: experience ?? 0,
       rating: rating ?? 3,
@@ -69,14 +123,20 @@ router.post("/", async (req, res) => {
       });
     }
 
-    if (error.name === "ValidationError" || error.name === "CastError") {
+    if (
+      error.name === "ValidationError" ||
+      error.name === "CastError"
+    ) {
       return res.status(400).json({
         message: "Please check the employee details.",
       });
     }
 
     console.error("Create employee:", error.message);
-    res.status(500).json({ message: "Unable to create employee." });
+
+    res.status(500).json({
+      message: "Unable to create employee.",
+    });
   }
 });
 
@@ -84,7 +144,9 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid employee ID." });
+      return res.status(400).json({
+        message: "Invalid employee ID.",
+      });
     }
 
     const allowedFields = [
@@ -111,7 +173,53 @@ router.put("/:id", async (req, res) => {
     }
 
     if (updates.email !== undefined) {
-      updates.email = String(updates.email).trim().toLowerCase();
+      updates.email = String(updates.email)
+        .trim()
+        .toLowerCase();
+    }
+
+    // NEW: Check existing employee before validating department.
+    const existingEmployee = await Employee.findOne({
+      _id: req.params.id,
+      company: req.user.companyId,
+    });
+
+    if (!existingEmployee) {
+      return res.status(404).json({
+        message: "Employee not found.",
+      });
+    }
+
+    if (updates.department !== undefined) {
+      if (
+        typeof updates.department !== "string" ||
+        !updates.department.trim()
+      ) {
+        return res.status(400).json({
+          message: "Please select a department.",
+        });
+      }
+
+      const requestedDepartment = updates.department.trim();
+
+      // Validate only when changing department.
+      // Existing employee department values remain supported.
+      if (requestedDepartment !== existingEmployee.department) {
+        const departmentCheck = await validateDepartment(
+          req.user.companyId,
+          requestedDepartment
+        );
+
+        if (!departmentCheck.valid) {
+          return res.status(400).json({
+            message: departmentCheck.message,
+          });
+        }
+
+        updates.department = departmentCheck.name;
+      } else {
+        updates.department = existingEmployee.department;
+      }
     }
 
     const employee = await Employee.findOneAndUpdate(
@@ -120,11 +228,16 @@ router.put("/:id", async (req, res) => {
         company: req.user.companyId,
       },
       updates,
-      { new: true, runValidators: true }
+      {
+        new: true,
+        runValidators: true,
+      }
     );
 
     if (!employee) {
-      return res.status(404).json({ message: "Employee not found." });
+      return res.status(404).json({
+        message: "Employee not found.",
+      });
     }
 
     res.status(200).json({
@@ -138,14 +251,20 @@ router.put("/:id", async (req, res) => {
       });
     }
 
-    if (error.name === "ValidationError" || error.name === "CastError") {
+    if (
+      error.name === "ValidationError" ||
+      error.name === "CastError"
+    ) {
       return res.status(400).json({
         message: "Please check the employee details.",
       });
     }
 
     console.error("Update employee:", error.message);
-    res.status(500).json({ message: "Unable to update employee." });
+
+    res.status(500).json({
+      message: "Unable to update employee.",
+    });
   }
 });
 
@@ -153,7 +272,9 @@ router.put("/:id", async (req, res) => {
 router.patch("/:id/status", async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid employee ID." });
+      return res.status(400).json({
+        message: "Invalid employee ID.",
+      });
     }
 
     const { status } = req.body;
@@ -170,11 +291,16 @@ router.patch("/:id/status", async (req, res) => {
         company: req.user.companyId,
       },
       { status },
-      { new: true, runValidators: true }
+      {
+        new: true,
+        runValidators: true,
+      }
     );
 
     if (!employee) {
-      return res.status(404).json({ message: "Employee not found." });
+      return res.status(404).json({
+        message: "Employee not found.",
+      });
     }
 
     res.status(200).json({
@@ -183,6 +309,7 @@ router.patch("/:id/status", async (req, res) => {
     });
   } catch (error) {
     console.error("Update employee status:", error.message);
+
     res.status(500).json({
       message: "Unable to update employee status.",
     });
@@ -190,4 +317,3 @@ router.patch("/:id/status", async (req, res) => {
 });
 
 module.exports = router;
-

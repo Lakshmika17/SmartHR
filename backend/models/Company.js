@@ -8,11 +8,13 @@ const companySchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     industry: {
       type: String,
       default: "Information Technology",
       trim: true,
     },
+
     companyCode: {
       type: String,
       required: true,
@@ -20,6 +22,7 @@ const companySchema = new mongoose.Schema(
       uppercase: true,
       trim: true,
     },
+
     isActive: {
       type: Boolean,
       default: true,
