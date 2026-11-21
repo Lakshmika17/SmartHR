@@ -292,65 +292,85 @@ def predict_promotion(data: PromotionInput):
 
 class AttritionInput(BaseModel):
     Age: int = Field(ge=18, le=100)
-    BusinessTravel: str
-    DailyRate: int = Field(ge=0)
     Department: str
-    DistanceFromHome: int = Field(ge=0)
-    Education: int = Field(ge=1, le=5)
-    EducationField: str
-    EnvironmentSatisfaction: int = Field(ge=1, le=4)
-    Gender: str
-    HourlyRate: int = Field(ge=0, le=100)
-    JobInvolvement: int = Field(ge=1, le=4)
-    JobLevel: int = Field(ge=1, le=5)
-    JobRole: str
-    JobSatisfaction: int = Field(ge=1, le=4)
-    MaritalStatus: str
     MonthlyIncome: int = Field(ge=0)
-    MonthlyRate: int = Field(ge=0)
-    NumCompaniesWorked: int = Field(ge=0)
     OverTime: str
-    PercentSalaryHike: int = Field(ge=0, le=100)
-    PerformanceRating: int = Field(ge=1, le=4)
-    RelationshipSatisfaction: int = Field(ge=1, le=4)
-    StockOptionLevel: int = Field(ge=0, le=3)
-    TotalWorkingYears: int = Field(ge=0)
-    TrainingTimesLastYear: int = Field(ge=0)
-    WorkLifeBalance: int = Field(ge=1, le=4)
     YearsAtCompany: int = Field(ge=0)
-    YearsInCurrentRole: int = Field(ge=0)
-    YearsSinceLastPromotion: int = Field(ge=0)
-    YearsWithCurrManager: int = Field(ge=0)
 
 
 @app.post("/predict/attrition")
 def predict_attrition(data: AttritionInput):
     try:
-        employee = pd.DataFrame([data.model_dump()])
+        # Only 5 fields are entered from the frontend.
+        # Remaining fields are given default values required
+        # by the existing trained ML model.
+
+        employee = pd.DataFrame([{
+            "Age": data.Age,
+            "BusinessTravel": "Travel_Rarely",
+            "DailyRate": 800,
+            "Department": data.Department,
+            "DistanceFromHome": 5,
+            "Education": 3,
+            "EducationField": "Life Sciences",
+            "EnvironmentSatisfaction": 3,
+            "Gender": "Male",
+            "HourlyRate": 65,
+            "JobInvolvement": 3,
+            "JobLevel": 2,
+            "JobRole": "Research Scientist",
+            "JobSatisfaction": 3,
+            "MaritalStatus": "Single",
+            "MonthlyIncome": data.MonthlyIncome,
+            "MonthlyRate": 14000,
+            "NumCompaniesWorked": 2,
+            "OverTime": data.OverTime,
+            "PercentSalaryHike": 15,
+            "PerformanceRating": 3,
+            "RelationshipSatisfaction": 3,
+            "StockOptionLevel": 0,
+            "TotalWorkingYears": max(data.YearsAtCompany, 1),
+            "TrainingTimesLastYear": 3,
+            "WorkLifeBalance": 3,
+            "YearsAtCompany": data.YearsAtCompany,
+            "YearsInCurrentRole": min(data.YearsAtCompany, 5),
+            "YearsSinceLastPromotion": 1,
+            "YearsWithCurrManager": min(data.YearsAtCompany, 5),
+        }])
 
         prediction = int(attrition_model.predict(employee)[0])
+
         probabilities = attrition_model.predict_proba(employee)[0]
+
         classes = list(
             attrition_model.named_steps["classifier"].classes_
         )
+
         attrition_index = classes.index(1)
-        probability = float(probabilities[attrition_index])
+
+        probability = float(
+            probabilities[attrition_index]
+        )
 
         return {
             "prediction": (
-                "Likely to Leave" if prediction == 1
+                "Likely to Leave"
+                if prediction == 1
                 else "Likely to Stay"
             ),
-            "attrition_probability": round(probability * 100, 2),
+            "attrition_probability": round(
+                probability * 100, 2
+            ),
             "model_prediction": prediction,
             "notice": (
-                "This is a model estimate, not a definitive assessment "
-                "of an employee. Use it with human review."
+                "This is a model estimate, not a definitive "
+                "assessment of an employee. Use it with human review."
             ),
         }
 
     except Exception as error:
         print("Attrition prediction error:", str(error))
+
         raise HTTPException(
             status_code=500,
             detail="Unable to generate an attrition prediction.",
