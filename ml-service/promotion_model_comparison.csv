@@ -1,0 +1,4 @@
+Algorithm,Training Accuracy (%),Testing Accuracy (%),Precision,Recall,F1 Score,ROC-AUC,Average Precision
+Decision Tree,83.25,77.71,0.2054,0.5632,0.301,0.7212,0.3951
+Random Forest,91.19,86.77,0.332,0.546,0.413,0.8039,0.4736
+Logistic Regression,75.8,76.27,0.2147,0.6713,0.3253,0.7979,0.5173
