@@ -12,8 +12,11 @@ export default function EmployeeProfile() {
 
   const [employee, setEmployee] = useState(null);
 
-  const apiBase =
-    import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const apiBase = (
+  import.meta.env.VITE_API_URL || "http://localhost:5000"
+)
+  .replace(/\/+$/, "")
+  .replace(/\/api$/, "");
 
   // Fetch employees from MongoDB
   useEffect(() => {
