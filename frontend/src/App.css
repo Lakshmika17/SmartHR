@@ -1556,3 +1556,42 @@ body,
     grid-template-columns: minmax(0, 1fr);
   }
 }
+/* ===== FIXED SIDEBAR + FIXED TOPBAR ===== */
+
+@media (min-width: 761px) {
+
+  /* Sidebar stays fixed while page scrolls */
+  .app-shell > .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 270px !important;
+    min-width: 270px !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+    z-index: 1000 !important;
+  }
+
+  /* Main content starts after fixed sidebar */
+  .app-shell > .main-content {
+    margin-left: 270px !important;
+    width: calc(100% - 270px) !important;
+    min-height: 100vh;
+  }
+
+  /* Topbar stays fixed */
+  .main-content > .topbar {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: 270px !important;
+    height: 78px !important;
+    z-index: 999 !important;
+  }
+
+  /* Content scrolls underneath the fixed topbar */
+  .main-content > .page-area {
+    padding-top: 108px !important;
+  }
+}
